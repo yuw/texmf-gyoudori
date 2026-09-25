@@ -27,6 +27,10 @@ gyou-dori >>> https://www.w3.org/TR/jlreq/#processing_of_gyoudori
 (u)pLaTeX, or LuaLaTeX with LuaTeX-ja (e.g. ltjsarticle, jlreq);
 LaTeX 2020-10-01 or later.
 
+## Manual
+
+See `doc/gyoudori/gyoudori-ja.pdf` (in Japanese).
+
 ## Usage
 
 The following two codes have the same effect.

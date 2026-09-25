@@ -1,0 +1,232 @@
+%% gyoudori-ja.tex: gyoudoriパッケージのマニュアル
+%% 組版：platex gyoudori-ja && dvipdfmx gyoudori-ja
+\documentclass[a4paper]{jsarticle}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage[displaymath]{gyoudori}
+
+\makeatletter
+\newcommand\pkg[1]{\textsf{#1}}
+\newcommand\opt[1]{\texttt{#1}}
+\newcommand\env[1]{\texttt{#1}}
+\newcommand\cs[1]{\texttt{\char`\\#1}}
+\newcommand\meta[1]{$\langle$\textit{#1}$\rangle$}
+% 実例の枠
+\newenvironment{demo}
+  {\par\medskip\noindent
+   \begin{minipage}{\linewidth}\hrule\smallskip}
+  {\par\smallskip\hrule\end{minipage}\par\medskip}
+\makeatother
+
+\title{\pkg{gyoudori}パッケージ\\行ドリの実現}
+\author{Yuwsuke Kieda}
+\date{2026年9月25日\quad v20260925.0}
+
+\begin{document}
+\maketitle
+
+\section{概要}
+
+\pkg{gyoudori}は，見出しなどを行ドリ（行取り）で組むための\LaTeX{}パッケージです．
+行ドリとは，ある要素を本文の行送りの何行分かの領域に配置し，その前後の本文の行を
+行送りの位置（行のグリッド）からずらさない組み方です
+（\url{https://www.w3.org/TR/jlreq/#processing_of_gyoudori}）．
+
+このパッケージは次の機能を提供します．
+\begin{itemize}
+\item \env{gyoudori}環境と\cs{gyoudoriarea}命令：指定した行数で行ドリする．
+\item ディスプレイ数式の自動行ドリ（\opt{displaymath}オプション）：\env{eqnarray}，
+  \env{align}，\env{gather}を，収まる最少の行数で行ドリする．
+\item フロートの行ドリ（\opt{float}オプション）：図表を，収まる最少の行数の領域に
+  置き，前後の本文の行送りをずらさない．
+\end{itemize}
+
+\section{動作環境}
+
+\begin{itemize}
+\item pLaTeX，upLaTeX，またはLuaLaTeX＋LuaTeX-ja（\pkg{ltjsarticle}，\pkg{jlreq}
+  など）．
+\item \LaTeX{} 2020-10-01以降（環境フック\cs{AddToHook}を使う）．
+\item \pkg{kvoptions}パッケージ．
+\end{itemize}
+横組のみを対象としています．
+
+\section{インストール}
+
+\texttt{gyoudori.sty}（リポジトリの\texttt{tex/latex/gyoudori/}にある）を
+TEXMFツリーに置きます．
+このリポジトリ自体をTEXMFHOMEとして使うこともできます．
+
+\section{使い方}
+
+\subsection{行ドリの領域}
+
+$n$行ドリの領域は，本文の$n$行分の字面の範囲です．1行目の字面の上端から，$n$行目の
+字面の下端までを領域とします．高さは次のとおりです．
+\[
+  (n-1)\times\text{行送り} + \text{「阿」の高さ} + \text{「阿」の深さ}
+\]
+行送りは\cs{normalbaselineskip}，字面の高さと深さは「阿」の寸法で，いずれも
+\cs{normalsize}のものを使います．文中で\cs{small}などに切り替えていても，基準は
+本文（\cs{normalsize}）の行のグリッドです．
+
+\subsection{\env{gyoudori}環境}
+
+\begin{verbatim}
+\begin{gyoudori}[<位置>]{<行数>}
+<内容>
+\end{gyoudori}
+\end{verbatim}
+\meta{内容}を\meta{行数}行ドリします．\meta{位置}は領域の中での配置で，
+\opt{t}（上寄せ），\opt{c}（中央．既定），\opt{b}（下寄せ）のいずれかです．
+それ以外を指定するとエラーになります．
+
+\meta{内容}は垂直モードで組まれるので，複数行や文字サイズの変更を含められます．
+
+\begin{demo}
+本文の行です．前の段落の最後の行です．
+\begin{gyoudori}{3}
+\large 3行ドリの見出し（中央）
+\end{gyoudori}
+
+本文の行です．見出しの後の段落も，行送りの位置からずれません．
+\begin{gyoudori}[b]{2}
+2行ドリの見出し（下寄せ）
+\end{gyoudori}
+空行を置かずに続けた本文は，字下げされません．
+\end{demo}
+
+\verb|\end{gyoudori}|の直後に空行がなければ，後続の文は字下げせず，\cs{parskip}も
+入れません（ディスプレイ数式の後と同じ扱い）．空行があれば通常の段落になります．
+
+\subsection{\cs{gyoudoriarea}命令}
+
+\begin{verbatim}
+\gyoudoriarea[<位置>]{<行数>}{<内容>}
+\end{verbatim}
+\env{gyoudori}環境と同じく，\meta{内容}を\meta{行数}行ドリします．命令なので，直後の
+字下げの制御はありません．後続の段落は通常どおり字下げされます．
+
+\section{パッケージオプション}
+
+オプションはkey-value形式で指定します．
+
+\begin{verbatim}
+\usepackage[displaymath=true,float=true,textfloatsep=2\baselineskip]{gyoudori}
+\end{verbatim}
+
+真偽値のオプションは，\opt{displaymath}のようにキーだけを書くと\opt{true}になります．
+
+\subsection{\opt{displaymath=true|false}}
+
+ディスプレイ数式を自動的に行ドリします．既定は\opt{false}です．
+
+対象は\env{eqnarray}，\env{eqnarray*}，\env{align}，\env{align*}，\env{gather}，
+\env{gather*}です（\env{align}と\env{gather}は\pkg{amsmath}が必要）．数式全体が
+収まる最少の行数（2行以上）で行ドリし，領域の中央に置きます．数式の前後の
+\cs{abovedisplayskip}などのアキは使いません．式番号，\cs{label}，\cs{eqref}は
+ふだんどおり使えます．
+
+\begin{demo}
+本文の行です．次の式は行ドリされます．
+\begin{align}
+  a &= b + c \\
+  d &= e
+\end{align}
+式の後の本文も行送りの位置に来ます．
+\begin{gather*}
+  x = y
+\end{gather*}
+本文の行です．
+\end{demo}
+
+\pkg{amsmath}の\env{align}と\env{gather}は各行に\cs{strut}を入れるので，2行の
+\env{align}は高さが2行送りになり，3行ドリになります．
+
+\subsection{\opt{float=true|false}}
+
+フロートを行ドリで配置します．既定は\opt{false}です．
+
+\begin{itemize}
+\item フロートは，それが収まる最少の行数（1行以上）の行ドリ領域の大きさにします．
+\item 置き場所が決まったら，領域の中での位置を次のように決めます．
+  \begin{itemize}
+  \item 上に置かれたとき：上寄せ（\opt{t}）．領域の上端を本文1行目の字面の上端に
+    そろえる．
+  \item 下に置かれたとき：下寄せ（\opt{b}）．領域の下端を本文の行の字面の下端に
+    そろえる．
+  \item ここ（\opt{h}）に置かれたとき：中央．前後の本文の行の字面にそろえる．
+  \end{itemize}
+\item フロートまわりのアキ（\cs{floatsep}など5つ．次節を参照）は，
+  「行間＋行送りの整数倍」のうち，
+  指定値以上で最小の値に丸め，伸縮をなくします．行間は，行送り$-$「阿」の高さ
+  $-$「阿」の深さです．\cs{intextsep}はフロートの上下に入るので，行間を半分ずつ
+  割り振った値になります．
+\end{itemize}
+これにより，フロートの前後で本文の行送りはずれません．
+
+\LaTeX{}は\opt{[h]}だけの指定を\opt{[ht]}に変えます．その場に置けずに上に回った
+フロートは，上寄せで組み直されます．ここのフロートの直前では改段しません（段の
+先頭に来ると，前のアキが捨てられて位置がずれるため）．
+
+\subsection{\opt{floatsep}，\opt{textfloatsep}，\opt{intextsep}，
+  \opt{dblfloatsep}，\opt{dbltextfloatsep}}
+
+同名の長さを設定します．指定しなければ，クラスファイルの値を使います．
+\opt{float=true}のときは，これらの値をもとに上記の丸めを行います．
+\opt{float=false}のときは，指定した値がそのまま入ります．
+
+\section{他のパッケージとの併用}
+
+以下は\opt{float=true}のときの動作です．
+
+\begin{description}
+\item[\pkg{nidanfloat}] 段抜きのフロート（\env{figure*}）は，上に置かれれば版面の
+  上端に，下に置かれれば版面に入る最終行の字面の下端にそろえます．2段組の段ごとの
+  下のフロートは，段に入る最終行の字面の下端にそろえます．\pkg{nidanfloat}の前後
+  どちらで読み込んでもかまいません．
+\item[\pkg{stfloats}] 段抜きのフロートの上と下を，\pkg{nidanfloat}と同じように
+  そろえます．
+\item[\pkg{flushend}] 最終ページで揃えた段の中のグルーを伸縮させず，行を行送りの
+  位置に保ちます．そのため\opt{spread}，\opt{shrink}系のオプションは効きません．
+  左右の段のつなぎ目の間隔は，行送りの整数倍に切り上げます．
+\item[\pkg{evenend}] （LuaLaTeX）最終ページで揃えた段のフロートを，上なら上寄せ，
+  下なら下寄せにそろえます．
+\end{description}
+
+\section{しくみ}
+
+行ドリする内容は，行ドリ領域の高さの\cs{vbox}に組みます．この箱の高さを
+「阿」の高さに，深さを残りすべてに付け替え，\cs{baselineskip}で置きます．そのうえで
+\cs{prevdepth}を「阿」の深さにします．こうすると，領域の1行目のベースラインと，
+次の行のベースラインがともに行送りの位置に来ます（阿部紀行氏の方法による．
+\url{https://abenori.blogspot.com/2017/12/gyodori.html}）．
+
+ディスプレイ数式は，環境の外側で開いたボックスに組んで大きさを測り，同じ方法で
+置きます．フロートは，出力ルーチンの\cs{@cflt}，\cs{@cflb}，\cs{@addtocurcol}
+などの前に処理を足し，置き場所に応じて箱の中身の位置を組み直します．箱の外形
+（高さと深さ）は変えないので，\LaTeX{}のフロート配置の計算には影響しません．
+
+\section{制限事項}
+
+\begin{itemize}
+\item 行のグリッドは\cs{normalsize}の行送りが基準です．\cs{small}などの中では，
+  周りの行と行送りが合いません．
+\item 箇条書きの\cs{topsep}，\cs{itemsep}，\cs{parsep}は行送りの整数倍では
+  ないので，箇条書きの中や前後では行送りの位置がずれます．
+\item フロートだけのページや段（文書末尾で吐き出されるものなど）は対象外です．
+\item \cs{flushbottom}の文書，\pkg{float}パッケージの\opt{[H]}との組み合わせは
+  試していません．
+\item \pkg{flushend}と脚注と，最終ページの下のフロートまたはここのフロートが
+  重なると，本文が1\,pt前後ずれることがあります．
+\item \pkg{flushend}の\opt{checkfloat}オプションで，最終ページの右段がフロート
+  だけの段になると，後ろの本文がずれることがあります．
+\item \pkg{stfloats}の\cs{fnbelowfloat}は，pLaTeXでは効きません（pLaTeXは独自の
+  \cs{@makecol}を使うため）．pLaTeXでは，脚注は常に下のフロートの下に来ます．
+\end{itemize}
+
+\section{ライセンス}
+
+MITライセンスです．
+
+\end{document}
