@@ -56,6 +56,20 @@ The line numbers of the area.
 
 The heading text.
 
+## Package option
+
+### displaymath=true|false
+
+Automatically apply gyou-dori to the display math environments
+`eqnarray`, `eqnarray*`, `align`, `align*`, `gather` and `gather*`
+(`align` and `gather` require amsmath).
+Each display is centered in the smallest area of at least 2 lines that holds it.
+The default is `false`.
+
+```tex
+\usepackage[displaymath=true]{gyoudori}
+```
+
 ## Repository
 
 https://github.com/yuw/texmf-gyoudori

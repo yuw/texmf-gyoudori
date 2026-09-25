@@ -1,7 +1,13 @@
 \NeedsTeXFormat{pLaTeX2e}[2020/02/02]
 \ProvidesPackage{gyoudori}
-   [2020/07/31 v0.1 style file ``gyoudori.sty''^^J
+   [2026/09/25 v20260925.0 style file ``gyoudori.sty''^^J
     by Yuwsuke Kieda]
+
+\RequirePackage{kvoptions}
+\SetupKeyvalOptions{family=gyoudori,prefix=gyoudori@}
+% displaymath=true|false: ディスプレイ数式環境を自動的に行ドリする（既定はfalse）
+\DeclareBoolOption[false]{displaymath}
+\ProcessKeyvalOptions*
 
 \def\@tmp@skip@t{t}%
 \def\@tmp@skip@c{c}%
@@ -62,5 +68,71 @@
   \@gyoudori@count@lines{#2}
   \@gyoudori@heading{#3}
 }
+
+% ディスプレイ数式の自動行ドリ
+%   対象：eqnarray(*)，align(*)，gather(*)
+%   数式全体を収める最少の行数（ただし2行以上）で行ドリし，その中で天地中央に置く．
+%   n行ドリの領域の高さは(n-1)\Cvs + \Cht + \Cdp．
+
+\newbox\@gyoudori@mbox
+
+\def\@gyoudori@math@begin{%
+  \par
+  \setbox\@gyoudori@mbox\vbox\bgroup
+    \hsize\linewidth \parshape\z@
+    \abovedisplayskip\z@ \belowdisplayskip\z@
+    \abovedisplayshortskip\z@ \belowdisplayshortskip\z@
+    \let\@gyoudori@math@end\@gyoudori@math@end@
+    \noindent}
+
+% align*の終了処理は内部で\endalignを呼ぶので，終了処理が二重に働かないよう，
+% \@gyoudori@math@endはボックスの中でだけ実体を持つ
+\let\@gyoudori@math@end\relax
+\def\@gyoudori@math@end@{%
+    \par
+    % 数式後の\belowdisplayskipと\postdisplaypenaltyを除く
+    \unskip\unpenalty\unskip\unpenalty
+  \egroup
+  \@gyoudori@math@place
+  % 後続の段落は，空行がなければ字下げしない
+  \global\@endpetrue
+  \global\@ignoretrue}
+
+\def\@gyoudori@math@place{%
+  % \@tempcnta = n - 1 = max(1, ceil((数式の高さ - \Cht - \Cdp)/\Cvs))
+  \@tempdima\dimexpr\ht\@gyoudori@mbox+\dp\@gyoudori@mbox-\Cht-\Cdp\relax
+  \@tempcnta\@tempdima
+  \@tempcntb\Cvs
+  \divide\@tempcnta\@tempcntb
+  \ifdim\@tempcnta\Cvs<\@tempdima \advance\@tempcnta\@ne\fi
+  \ifnum\@tempcnta<\@ne \@tempcnta\@ne\fi
+  % 領域の1行目を\baselineskipで行送りの位置に置き，その字面の上端に戻る
+  \hbox{\vrule\@height\Cht\@depth\z@\@width\z@}%
+  \nobreak\nointerlineskip
+  \vskip-\Cht
+  \moveright\@totalleftmargin
+  \vbox to\dimexpr\@tempcnta\Cvs+\Cht+\Cdp\relax{%
+    \vss\box\@gyoudori@mbox\vss}%
+  % 次の行を領域の最終行から\baselineskipで送る
+  \prevdepth\Cdp}
+
+\def\@gyoudori@math@patch#1{%
+  \@ifundefined{#1}{}{%
+    \expandafter\let\csname @gyoudori@orig@#1\expandafter\endcsname
+      \csname #1\endcsname
+    \expandafter\let\csname @gyoudori@orig@end#1\expandafter\endcsname
+      \csname end#1\endcsname
+    \expandafter\edef\csname #1\endcsname{%
+      \noexpand\@gyoudori@math@begin
+      \expandafter\noexpand\csname @gyoudori@orig@#1\endcsname}%
+    \expandafter\edef\csname end#1\endcsname{%
+      \expandafter\noexpand\csname @gyoudori@orig@end#1\endcsname
+      \noexpand\@gyoudori@math@end}}}
+
+\ifgyoudori@displaymath
+  \AtBeginDocument{%
+    \@for\@tempa:=eqnarray,eqnarray*,align,align*,gather,gather*\do{%
+      \expandafter\@gyoudori@math@patch\expandafter{\@tempa}}}
+\fi
 
 \endinput
