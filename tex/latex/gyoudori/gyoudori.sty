@@ -3,136 +3,127 @@
    [2026/09/25 v20260925.0 style file ``gyoudori.sty''^^J
     by Yuwsuke Kieda]
 
+% 環境フック（\AddToHook）を使うので，LaTeX 2020-10-01以降が必要
+\@ifl@t@r\fmtversion{2020/10/01}{}{%
+  \PackageError{gyoudori}{LaTeX 2020-10-01 or later is required}{}}
+
 \RequirePackage{kvoptions}
 \SetupKeyvalOptions{family=gyoudori,prefix=gyoudori@}
 % displaymath=true|false: ディスプレイ数式環境を自動的に行ドリする（既定はfalse）
 \DeclareBoolOption[false]{displaymath}
 \ProcessKeyvalOptions*
 
-\def\@tmp@skip@t{t}%
-\def\@tmp@skip@c{c}%
-\def\@tmp@skip@b{b}%
+%% 行ドリの基準：\normalsizeの「阿」の高さ・深さと行送り
+\newdimen\@gyoudori@ht
+\newdimen\@gyoudori@dp
+\newdimen\@gyoudori@bs
+\def\@gyoudori@metrics{%
+  \begingroup
+    \normalsize
+    \setbox\z@\hbox{\char\jis"3024}% 阿
+    \global\@gyoudori@ht\ht\z@
+    \global\@gyoudori@dp\dp\z@
+    \global\@gyoudori@bs\normalbaselineskip
+  \endgroup}
 
-\def\@gyoudori@opt@chck#1{%
-  \def\@tmp@skip@opt{#1}%
-  \@tfor\@tempa:={#1}\do{%
-    \ifx\@tempa\@tmp@skip@t\relax
-    \else
-      \ifx\@tempa\@tmp@skip@c\relax
-      \else
-        \ifx\@tempa\@tmp@skip@b\relax
-        \else
-          \PackageError{gyoudoriarea}{%
-            Undefined option of command the gyoudoriarea! Option is only t, c or b}{%
-            Option of command the gyoudoriarea is only t, c or b.}
-        \fi
-      \fi
-    \fi}}
+% #1行ドリの領域の高さ：(#1-1)行送り + 阿の高さ + 阿の深さ
+\def\@gyoudori@areaheight#1{%
+  \dimexpr\@gyoudori@bs*(#1-1)+\@gyoudori@ht+\@gyoudori@dp\relax}
 
-\newcount\@gyoudori@cnt
+%% 領域の中での位置
+\def\@gyoudori@pos@t#1{#1\vss}
+\def\@gyoudori@pos@c#1{\vss#1\vss}
+\def\@gyoudori@pos@b#1{\vss#1\vskip\z@}% \vskip\z@で深さを0にし，下端に揃える
 
-\def\@gyoudori@heading#1{
-  \leavevmode\par\vspace*{-\dimexpr \Cht + \Cdp \relax}
-  \noindent
-  \vbox to \dimexpr \@gyoudori@cnt\Cvs + \Cht \relax{%
-    \ifx\@tmp@skip@opt\@tmp@skip@c\vss\fi
-    \ifx\@tmp@skip@opt\@tmp@skip@b\vss\fi
-    #1
-    \ifx\@tmp@skip@opt\@tmp@skip@t\vss\fi
-    \ifx\@tmp@skip@opt\@tmp@skip@c\vss\vskip-\Cdp\fi
-    \ifx\@tmp@skip@opt\@tmp@skip@b\vskip-\Cdp\fi
-  }%
-}
+\def\@gyoudori@checkpos#1{%
+  \@ifundefined{@gyoudori@pos@#1}{%
+    \PackageError{gyoudori}{Undefined position `#1'}{%
+      The position is t, c or b.}}{}}
 
-\def\@gyoudori@count@lines#1{
-  \@gyoudori@cnt#1\relax
-  \@gyoudori@cnt\numexpr\@gyoudori@cnt - 1\relax
-}
+%% 行ドリの本体：#3を#2行ドリして，位置#1（t/c/b）に置く．
+% 領域全体を1つのボックスにし，高さを1行目の字面の高さ（阿の高さ）に，深さを残り
+% 全部にして\baselineskipで置く．次の行は領域の最終行から\baselineskipで送る
+% （https://abenori.blogspot.com/2017/12/gyodori.html による）．
+\newbox\@gyoudori@area
+\def\@gyoudori@place#1#2#3{%
+  \@gyoudori@metrics
+  \setbox\@gyoudori@area\vbox to\@gyoudori@areaheight{#2}{%
+    \csname @gyoudori@pos@#1\endcsname{#3}}%
+  \dp\@gyoudori@area
+    \dimexpr\ht\@gyoudori@area+\dp\@gyoudori@area-\@gyoudori@ht\relax
+  \ht\@gyoudori@area\@gyoudori@ht
+  \par
+  \moveright\@totalleftmargin\box\@gyoudori@area
+  \par
+  \prevdepth\@gyoudori@dp}
 
+%% 行ドリした環境の直後
+% 空行がなければ後続の段落を字下げせず，\parskipも入れない（リスト内の\parsepで
+% 行送りがずれないように）．空行があれば通常の段落とする．
+% 環境を抜けた後に，LaTeXの\@doendpeと同じしくみで処理する．
+\def\@gyoudori@doendpe{%
+  \edef\@gyoudori@restoreparskip{\parskip\the\parskip\relax}%
+  \parskip\z@skip
+  \@endpetrue
+  \def\par{%
+    \@restorepar\@gyoudori@restoreparskip
+    \clubpenalty\@clubpenalty\@endpefalse\everypar{}\par}%
+  \everypar{{\setbox\z@\lastbox}%
+    \@gyoudori@restoreparskip\everypar{}\@endpefalse}}
+
+%% ユーザー命令
 \newbox\@gyoudori@box
-
-\def\gyoudori{\@testopt{\@gyoudori}{c}}
-\def\@gyoudori[#1]#2{%
-  \@gyoudori@opt@chck{#1}
-  \@gyoudori@count@lines{#2}
-  \setbox\@gyoudori@box\vbox\bgroup
-}
-\def\endgyoudori{%
+\newenvironment{gyoudori}[2][c]{%
+  \@gyoudori@checkpos{#1}%
+  \def\@gyoudori@args{{#1}{#2}}%
+  \setbox\@gyoudori@box\vbox\bgroup}{%
   \egroup
-  \@gyoudori@heading{\box\@gyoudori@box}
-}
+  \expandafter\@gyoudori@place\@gyoudori@args{\box\@gyoudori@box}}
+\AddToHook{env/gyoudori/after}{\@gyoudori@doendpe}
 
-\def\gyoudoriarea{\@testopt{\@gyoudoriarea}{c}}
-\def\@gyoudoriarea[#1]#2#3{%
-  \@gyoudori@opt@chck{#1}
-  \@gyoudori@count@lines{#2}
-  \@gyoudori@heading{#3}
-}
+\newcommand\gyoudoriarea[3][c]{%
+  \@gyoudori@checkpos{#1}%
+  \@gyoudori@place{#1}{#2}{#3}}
 
-% ディスプレイ数式の自動行ドリ
-%   対象：eqnarray(*)，align(*)，gather(*)
-%   数式全体を収める最少の行数（ただし2行以上）で行ドリし，その中で天地中央に置く．
-%   n行ドリの領域の高さは(n-1)\Cvs + \Cht + \Cdp．
-
-\newbox\@gyoudori@mbox
+%% ディスプレイ数式の自動行ドリ（displaymath=true）
+% 数式を環境の外側で開いたボックスに組み，それが収まる最少の行数（2行以上）で
+% 行ドリして中央に置く．
+\newbox\@gyoudori@mathbox
+\newcount\@gyoudori@lines
 
 \def\@gyoudori@math@begin{%
   \par
-  \setbox\@gyoudori@mbox\vbox\bgroup
+  \setbox\@gyoudori@mathbox\vbox\bgroup
     \hsize\linewidth \parshape\z@
     \abovedisplayskip\z@ \belowdisplayskip\z@
     \abovedisplayshortskip\z@ \belowdisplayshortskip\z@
-    \let\@gyoudori@math@end\@gyoudori@math@end@
     \noindent}
 
-% align*の終了処理は内部で\endalignを呼ぶので，終了処理が二重に働かないよう，
-% \@gyoudori@math@endはボックスの中でだけ実体を持つ
-\let\@gyoudori@math@end\relax
-\def\@gyoudori@math@end@{%
+\def\@gyoudori@math@end{%
     \par
-    % 数式後の\belowdisplayskipと\postdisplaypenaltyを除く
-    \unskip\unpenalty\unskip\unpenalty
+    \unskip\unpenalty\unskip\unpenalty % \belowdisplayskipと\postdisplaypenaltyを除く
   \egroup
-  \@gyoudori@math@place
-  % 後続の段落は，空行がなければ字下げしない
-  \global\@endpetrue
-  \global\@ignoretrue}
+  \@gyoudori@metrics
+  \@gyoudori@lines\tw@
+  \@whiledim\@gyoudori@areaheight\@gyoudori@lines
+      <\dimexpr\ht\@gyoudori@mathbox+\dp\@gyoudori@mathbox\relax\do
+    {\advance\@gyoudori@lines\@ne}%
+  \@gyoudori@place{c}{\@gyoudori@lines}{\box\@gyoudori@mathbox}%
+  \@gyoudori@doendpe}
 
-\def\@gyoudori@math@place{%
-  % \@tempcnta = n - 1 = max(1, ceil((数式の高さ - \Cht - \Cdp)/\Cvs))
-  \@tempdima\dimexpr\ht\@gyoudori@mbox+\dp\@gyoudori@mbox-\Cht-\Cdp\relax
-  \@tempcnta\@tempdima
-  \@tempcntb\Cvs
-  \divide\@tempcnta\@tempcntb
-  \ifdim\@tempcnta\Cvs<\@tempdima \advance\@tempcnta\@ne\fi
-  \ifnum\@tempcnta<\@ne \@tempcnta\@ne\fi
-  % 領域の1行目を\baselineskipで行送りの位置に置き，その字面の上端に戻る
-  \hbox{\vrule\@height\Cht\@depth\z@\@width\z@}%
-  \nobreak\nointerlineskip
-  \vskip-\Cht
-  \moveright\@totalleftmargin
-  \vbox to\dimexpr\@tempcnta\Cvs+\Cht+\Cdp\relax{%
-    \vss\box\@gyoudori@mbox\vss}%
-  % 次の行を領域の最終行から\baselineskipで送る
-  \prevdepth\Cdp}
-
-\def\@gyoudori@math@patch#1{%
-  \@ifundefined{#1}{}{%
-    \expandafter\let\csname @gyoudori@orig@#1\expandafter\endcsname
-      \csname #1\endcsname
-    \expandafter\let\csname @gyoudori@orig@end#1\expandafter\endcsname
-      \csname end#1\endcsname
-    \expandafter\edef\csname #1\endcsname{%
-      \noexpand\@gyoudori@math@begin
-      \expandafter\noexpand\csname @gyoudori@orig@#1\endcsname}%
-    \expandafter\edef\csname end#1\endcsname{%
-      \expandafter\noexpand\csname @gyoudori@orig@end#1\endcsname
-      \noexpand\@gyoudori@math@end}}}
+% 環境のグループの外側（before/after）にフックする．align*は内部で\endalignを
+% 呼ぶが，フックは\begin/\endでだけ働くので二重にはならない．
+\def\@gyoudori@math@hook#1{%
+  \AddToHook{env/#1/before}{\@gyoudori@math@begin}%
+  \AddToHook{env/#1/after}{\@gyoudori@math@end}}
 
 \ifgyoudori@displaymath
-  \AtBeginDocument{%
-    \@for\@tempa:=eqnarray,eqnarray*,align,align*,gather,gather*\do{%
-      \expandafter\@gyoudori@math@patch\expandafter{\@tempa}}}
+  \@gyoudori@math@hook{eqnarray}
+  \@gyoudori@math@hook{eqnarray*}
+  \@gyoudori@math@hook{align}
+  \@gyoudori@math@hook{align*}
+  \@gyoudori@math@hook{gather}
+  \@gyoudori@math@hook{gather*}
 \fi
 
 \endinput

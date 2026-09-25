@@ -40,6 +40,10 @@ The following two codes have the same effect.
 \gyoudoriarea[#1]{#2}{#3}
 ```
 
+If no blank line follows `\end{gyoudori}`, the next paragraph is not indented
+(and no `\parskip` is inserted), as after a display math.
+The same applies to the display math environments with the `displaymath` option.
+
 ### Arguments (option): #1
 
 The heading text postions.
