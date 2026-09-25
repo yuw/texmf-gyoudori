@@ -1,8 +1,9 @@
-\NeedsTeXFormat{pLaTeX2e}[2020/02/02]
+\NeedsTeXFormat{LaTeX2e}[2020/10/01]
 \ProvidesPackage{gyoudori}
    [2026/09/25 v20260925.0 style file ``gyoudori.sty''^^J
     by Yuwsuke Kieda]
 
+% pLaTeX/upLaTeXとLuaLaTeX（LuaTeX-ja）で動く．
 % 環境フック（\AddToHook）を使うので，LaTeX 2020-10-01以降が必要
 \@ifl@t@r\fmtversion{2020/10/01}{}{%
   \PackageError{gyoudori}{LaTeX 2020-10-01 or later is required}{}}
@@ -38,7 +39,7 @@
 \def\@gyoudori@metrics{%
   \begingroup
     \normalsize
-    \setbox\z@\hbox{\char\jis"3024}% 阿
+    \setbox\z@\hbox{阿}%
     \global\@gyoudori@ht\ht\z@
     \global\@gyoudori@dp\dp\z@
     \global\@gyoudori@bs\normalbaselineskip
@@ -225,12 +226,21 @@
 
 % 下のフロート（\@cflb）
 \newif\if@gyoudori@pushed
-\def\@gyoudori@cflb{%
-  % 本文の末尾がグルーかカーン（\clearpageの\vfilなど）なら，フロートは本文の
-  % 直後ではなく版面の下端に押し下げられる
+% 本文の末尾がグルーかカーン（\clearpageの\vfilなど）なら真
+\def\@gyoudori@ifpushed{%
   \setbox\z@\vbox{\unvcopy\@outputbox\global\@tempcnta\lastnodetype}%
   \@gyoudori@pushedfalse
-  \ifnum\@tempcnta>10 \ifnum\@tempcnta<13 \@gyoudori@pushedtrue\fi\fi
+  \ifnum\@tempcnta>10 \ifnum\@tempcnta<13 \@gyoudori@pushedtrue\fi\fi}
+\def\@gyoudori@cflb{%
+  % 本文の末尾がグルーなら，フロートは本文の直後ではなく版面の下端に押し下げ
+  % られる．脚注の後に下のフロートを積むカーネル（LuaLaTeXなど）では，脚注の前に
+  % \vfilを入れてあるので，やはり版面の下端に置かれる
+  \if@gyoudori@fnabove
+    \@gyoudori@pushedtrue
+    \global\@gyoudori@fnabovefalse
+  \else
+    \@gyoudori@ifpushed
+  \fi
   \if@gyoudori@pushed
     \@gyoudori@floatbot\@gyoudori@dp % ずらさない
   \else
@@ -239,16 +249,30 @@
   \@gyoudori@orig@cflb
   \@gyoudori@bottomfit}
 
+% \@tempdimb = 下のフロートの後ろ（段の最下部）に置かれる脚注の高さ（pLaTeXの
+% \@makecolは，フロートの後に\skip\footins，脚注罫，脚注を足す．最後の行の深さは
+% 段の高さに数えない）．脚注を先に積むカーネルでは，ここでは\footinsは空
+\newif\if@gyoudori@fnabove
+\def\@gyoudori@footnoteheight{%
+  \ifvoid\footins
+    \@tempdimb\z@
+  \else
+    \setbox\z@\vbox{\footnoterule}%
+    \@tempdimb\dimexpr\skip\footins+\ht\z@+\dp\z@+\ht\footins\relax
+  \fi}
+
 % 下のフロートの並びの末尾を整える
 % ・最後のフロートの下端から阿の深さだけ上を行のベースラインとみなし，深さ阿の
 %   深さの空の行を置く（flushendが最終ページで段をつなぎ直すときにも，行として
 %   扱われて行送りがそろう）
 % ・その後に「版面に入る最終行のベースラインから版面の下端までの余り − 阿の深さ」
-%   を足す．押し下げられたとき（\clearpageの\vfil）に最終行の字面の下端にそろい，
+%   を足す（脚注があれば，版面の高さから脚注の高さを引いて求める）．
+%   押し下げられたとき（\clearpageの\vfil）に最終行の字面の下端にそろい，
 %   字面の下端が版面からはみ出すクラスでもOverfullにならない
 % ・押し下げられたときは，\@textbottom（\raggedbottomの.0001fil）の伸びを打ち消す
 \def\@gyoudori@bottomfit{%
-  \@gyoudori@lastlinegap\@colht
+  \@gyoudori@footnoteheight
+  \@gyoudori@lastlinegap{\dimexpr\@colht-\@tempdimb\relax}%
   \setbox\z@\vbox{\@textbottom\global\@tempskipa\lastskip}%
   \setbox\@outputbox\vbox{%
     \unvbox\@outputbox
@@ -284,11 +308,21 @@
 
 % ここのフロート：中央．直前の行の深さ\@pagedpを阿の深さとみなしてそろえる
 % （ここに置けずに上か下に回ったときは，そこで改めて組み直される）
+% 段の先頭に来ると前のアキが捨てられて位置がずれるので，直前では改段させない
+% （\if@nobreakが真だと，カーネルは\interlinepenaltyの代わりに\nobreakを入れる．
+% ここに置けなかったときは元に戻す）
 \def\@gyoudori@addtocurcol{%
   \@gyoudori@metrics
   \@gyoudori@float@set\@currbox{c}%
     {\dimexpr\@gyoudori@linegap/2+\@gyoudori@dp-\@pagedp\relax}%
-  \@gyoudori@orig@addtocurcol}
+  \if@nobreak
+    \def\@gyoudori@restore@nobreak{\@nobreaktrue}%
+  \else
+    \def\@gyoudori@restore@nobreak{\@nobreakfalse}%
+  \fi
+  \@nobreaktrue
+  \@gyoudori@orig@addtocurcol
+  \if@insert\else\@gyoudori@restore@nobreak\fi}
 
 % nidanfloatの2段組の段ごとの下のフロート（\L@cflb，\R@cflbの置き換え．
 % nidanfloat v2.9による）．元の定義はフロートの後ろにも\vssがあり，位置が伸びの
@@ -323,13 +357,38 @@
 \def\@gyoudori@natural#1{%
   \setbox#1\vbox to\ht#1{\unvbox#1\vskip\z@\@plus1fill\@minus1fill}}
 
+% フロートの箱#1の中身のずらし量（\@gyoudori@float@setの#3．箱の中の先頭の
+% グルー）を\@gyoudori@shiftに得る
+\newdimen\@gyoudori@shift
+\def\@gyoudori@shiftof#1{%
+  \setbox\z@\vbox{%
+    \unvcopy#1\unskip\unskip
+    \setbox\z@\lastbox
+    \ifnum\gluestretchorder\lastskip>\z@ \unskip\fi
+    \global\@gyoudori@shift\lastskip}}
+
+% 左段の最後の要素について，ベースライン（フロートなら，中身の領域の下端から
+% 阿の深さだけ上）から箱の下端までを\@gyoudori@leftdepthに得る
+\newdimen\@gyoudori@leftdepth
+\def\@gyoudori@leftlast{%
+  \setbox\z@\vbox{%
+    \unvcopy\flushend@@varbox@a
+    \unskip\unkern\unpenalty\unskip\unkern\unpenalty\unskip\unkern\unpenalty
+    \global\setbox\@gyoudori@floatbody\lastbox}%
+  \ifvbox\@gyoudori@floatbody
+    \@gyoudori@shiftof\@gyoudori@floatbody
+    \global\@gyoudori@leftdepth\dimexpr\@gyoudori@dp-\@gyoudori@shift\relax
+  \else
+    \global\@gyoudori@leftdepth\dp\@gyoudori@floatbody
+  \fi}
+
 % flushendが左右の段をつなぐところ（\atColsBreakの位置）：つなぎ目の間隔を
 % 行送りの整数倍に切り上げる．flushendはつなぎ目に「右段の先頭で捨てられた
 % グルー」を入れるが，段の切れ目がフロートの処理と重なると，それが行間の
 % \baselineskipではなく\topskipになり，つなぎ目が詰まる．
-% 次の要素が行（\hbox）ならそのベースラインを，フロート（\vbox）なら字面の上端
-% （ベースライン − 阿の高さ）を，左段の最後の行のベースラインから行送りの整数倍
-% の位置に置く
+% 左段の最後の要素のベースラインから，右段の最初の要素のベースライン（フロート
+% なら中身の領域の上端から阿の高さだけ下．中身は箱の上端からずらし量だけ下に
+% ある）までを，行送りの整数倍にする
 \def\@gyoudori@colsbreak{%
   \ifdim\ht\@outputbox>\z@
     \@gyoudori@metrics
@@ -340,10 +399,11 @@
       \setbox\tw@\vbox{\unvbox\tw@\unskip\unpenalty
         \global\setbox\@gyoudori@floatbody\lastbox}%
     \endgroup
-    % \var@@temp@a：左段の最後の行の深さ．\oldbreak@skip：flushendが入れたグルー
-    \@tempdima\dimexpr\var@@temp@a+\oldbreak@skip\relax
+    % \oldbreak@skip：flushendがつなぎ目に入れたグルー
+    \@tempdima\dimexpr\@gyoudori@leftdepth+\oldbreak@skip\relax
     \ifvbox\@gyoudori@floatbody
-      \advance\@tempdima\@gyoudori@ht
+      \@gyoudori@shiftof\@gyoudori@floatbody
+      \advance\@tempdima\dimexpr\@gyoudori@ht+\@gyoudori@shift\relax
     \else
       \advance\@tempdima\ht\@gyoudori@floatbody
     \fi
@@ -351,6 +411,33 @@
     \@whiledim\@tempdimb<\@tempdima\do{\advance\@tempdimb\@gyoudori@bs}%
     \vskip\dimexpr\@tempdimb-\@tempdima\relax
   \fi}
+
+% 脚注を下のフロートより先に積むカーネル（LaTeX 2025-06-01以降の\@makecol．
+% 既定のfootnotes-floats-legacyなど）：下のフロートがあれば，脚注の前に\vfilを
+% 入れて，脚注と下のフロートを版面の下端に置く（本文が\vfilで終わっていれば
+% そのまま）
+\def\@gyoudori@appendfootnotes{%
+  \global\@gyoudori@fnabovefalse
+  \ifvoid\footins\else\ifx\@botlist\@empty\else
+    \global\@gyoudori@fnabovetrue
+    \@gyoudori@ifpushed
+    \if@gyoudori@pushed\else
+      \setbox\@outputbox\vbox{\unvbox\@outputbox\vfil}%
+    \fi
+  \fi\fi
+  \@gyoudori@orig@@outputbox@appendfootnotes}
+
+% evenend：最終ページでは，段内フロートの複製を\@makecolの前にとって自分で段を
+% 組むので，その前に上のフロートを[t]，下のフロートを[b]に組み直しておく
+% （下のフロートは段の下端に付けられるので，ずらさない）
+\def\@gyoudori@evenend@prep{%
+  \begingroup
+    \@gyoudori@floattop
+    \def\@elt##1{\@gyoudori@float@set##1\@gyoudori@floatpos\@gyoudori@floatshift}%
+    \@toplist
+    \def\@elt##1{\@gyoudori@float@set##1{b}\z@}%
+    \@botlist
+  \endgroup}
 
 % 出力ルーチンのマクロ#1の前に#2を足す（元の定義は\@gyoudori@orig@#1）
 \def\@gyoudori@prepend#1#2{%
@@ -371,6 +458,11 @@
   \let\@comdblflelt\@gyoudori@comdblflelt
   \let\@gyoudori@orig@addtocurcol\@addtocurcol
   \let\@addtocurcol\@gyoudori@addtocurcol
+  % 脚注を下のフロートより先に積むカーネル（pLaTeXは独自の\@makecolを使う）
+  \@ifundefined{pltx@adjust@wd@outputbox}{%
+    \@ifundefined{@outputbox@appendfootnotes}{}{%
+      \let\@gyoudori@orig@@outputbox@appendfootnotes\@outputbox@appendfootnotes
+      \let\@outputbox@appendfootnotes\@gyoudori@appendfootnotes}}{}%
   % nidanfloatの2段組：段ごとのフロート
   \@ifundefined{L@cflt}{}{%
     \@gyoudori@prepend{L@cflt}{\@gyoudori@floattop}%
@@ -378,11 +470,15 @@
     \def\L@cflb{\@gyoudori@nidan@cflb\@leftcolumn\L@botlist\@fixht{}}%
     \def\R@cflb{\@gyoudori@nidan@cflb\@outputbox\R@botlist\@rightfixht
       {\vskip-\@tempskipa}}}%
+  % evenend
+  \@ifundefined{evenend@capture}{}{%
+    \@gyoudori@prepend{evenend@capture}{\@gyoudori@evenend@prep}}%
   % flushend：最終ページの段の組み上げの後に足す
   \@ifundefined{set@outputbox@with@footnote@and@float}{}{%
     \g@addto@macro\set@outputbox@with@footnote@and@float
       {\@gyoudori@flushend@natural}%
     \@gyoudori@prepend{combine@columns@for@balance}{%
+      \@gyoudori@leftlast
       \atColsBreak\expandafter{\expandafter\@gyoudori@colsbreak\the\atColsBreak}}}}
 
 \ifgyoudori@float

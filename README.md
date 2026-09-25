@@ -24,7 +24,8 @@ gyou-dori >>> https://www.w3.org/TR/jlreq/#processing_of_gyoudori
 
 ## Requirement
 
-(u)pLaTeX with e-
+(u)pLaTeX, or LuaLaTeX with LuaTeX-ja (e.g. ltjsarticle, jlreq);
+LaTeX 2020-10-01 or later.
 
 ## Usage
 
@@ -85,7 +86,7 @@ The separations below are rounded up to
 "the interline gap + a multiple of the baselineskip" without stretch or shrink,
 so that the text lines around floats stay on the grid.
 Float-only pages are not handled.
-With the nidanfloat package, double-column floats (`figure*`) are aligned
+With the nidanfloat or stfloats package, double-column floats (`figure*`) are aligned
 to the top of the page (`t`) or to the last line of the page (`b`),
 and single-column bottom floats in two-column mode are aligned to the last line
 of the column.
@@ -93,6 +94,8 @@ With the flushend package, the balanced columns of the last page keep the line g
 the glue in the columns is not stretched or shrunk
 (so the `spread`/`shrink` options have no effect),
 and the gap where the two columns are joined is rounded up to the line grid.
+With the evenend package (LuaLaTeX), floats on the balanced last page are aligned
+to the top (`t`) or bottom (`b`) of the column.
 The default is `false`.
 
 ### floatsep, textfloatsep, intextsep, dblfloatsep, dbltextfloatsep
