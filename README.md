@@ -74,6 +74,36 @@ The default is `false`.
 \usepackage[displaymath=true]{gyoudori}
 ```
 
+### float=true|false
+
+Place floats on the line grid.
+Each float is put in the smallest gyou-dori area (at least 1 line) that holds it,
+and aligned to the top (`t`) when placed at the top of a page,
+to the bottom (`b`) when placed at the bottom,
+and centered when placed here (`h`).
+The separations below are rounded up to
+"the interline gap + a multiple of the baselineskip" without stretch or shrink,
+so that the text lines around floats stay on the grid.
+Float-only pages are not handled.
+With the nidanfloat package, double-column floats (`figure*`) are aligned
+to the top of the page (`t`) or to the last line of the page (`b`),
+and single-column bottom floats in two-column mode are aligned to the last line
+of the column.
+With the flushend package, the balanced columns of the last page keep the line grid:
+the glue in the columns is not stretched or shrunk
+(so the `spread`/`shrink` options have no effect),
+and the gap where the two columns are joined is rounded up to the line grid.
+The default is `false`.
+
+### floatsep, textfloatsep, intextsep, dblfloatsep, dbltextfloatsep
+
+Set the corresponding lengths.
+If not given, the values of the document class are used.
+
+```tex
+\usepackage[float=true,textfloatsep=2\baselineskip,intextsep=10pt]{gyoudori}
+```
+
 ## Repository
 
 https://github.com/yuw/texmf-gyoudori
