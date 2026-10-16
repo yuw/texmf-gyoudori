@@ -83,7 +83,8 @@ $n$行取りの領域の行送り方向の大きさは，JLREQ（W3C『日本語
 
 行送りには\cs{normalsize}の\cs{normalbaselineskip}を，字の枠の高さには
 \cs{normalsize}の「あ」の高さ$+$深さ（JFMの寸法）を使う．文中で\cs{small}などに
-切り替えていても，基準は本文の行のグリッドである．
+切り替えていても，基準は本文の行のグリッドである（\env{gyoudori}環境と
+\cs{gyoudoriarea}に\opt{local}を付けた場合を除く．\ref{sec:env}\nobreak 節）．
 
 字の枠の高さは，JFMによって異なる．upLaTeX，LuaTeX-ja（\pkg{jlreq}を含む）の
 標準のJFMでは全角幅と同じ（正方形の字の枠）で，JLREQの定義と一致する．pLaTeXの
@@ -144,13 +145,19 @@ JLREQの行間（行送り$-$文字サイズ）と一致する．pLaTeXの標準
 \subsection{\env{gyoudori}環境}\label{sec:env}
 
 \begin{verbatim}
-\begin{gyoudori}[<位置>]{<行数>}
+\begin{gyoudori}[<オプション>]{<行数>}
 <内容>
 \end{gyoudori}
 \end{verbatim}
-\meta{内容}を\meta{行数}行取りする．\meta{位置}は\opt{t}（上寄せ），\opt{c}（中央．
-既定），\opt{b}（下寄せ）のいずれかである．\meta{内容}は垂直モードで組まれるので，
-複数行や文字サイズの変更を含められる．
+\meta{内容}を\meta{行数}行取りする．\meta{オプション}には，位置と\opt{local}を
+カンマで区切って指定する．位置は\opt{t}（上寄せ），\opt{c}（中央．既定），\opt{b}
+（下寄せ）のいずれかである．\meta{内容}は垂直モードで組まれるので，複数行や文字
+サイズの変更を含められる．
+
+\opt{local}を付けると，\cs{normalsize}の行送りではなく，その場の文字サイズの「あ」の
+高さ・深さと\cs{baselineskip}を基準に行取りする．\cs{small}などに切り替えた部分の
+なかで，まわりの行にそろえるときに使う（例：\verb|\begin{gyoudori}[b,local]{2}|）．
+\opt{local}を付けないときは，文字サイズによらず\cs{normalsize}の行送りが基準である．
 
 \begin{demo}
 本文の行である．前の段落の最後の行である．
@@ -163,6 +170,17 @@ JLREQの行間（行送り$-$文字サイズ）と一致する．pLaTeXの標準
 2行取り下寄せの見出し
 \end{gyoudori}
 空行を置かずに続けた本文は，字下げされない．
+\end{demo}
+
+次は，\cs{small}で組んだ部分のなかで\opt{local}を付けた例である．グレーの帯は
+\cs{small}の行の位置を示す．
+
+\begin{demo}
+\small\GyBands[local]{5}\cs{small}で組んだ本文の行である．
+\begin{gyoudori}[local]{3}
+\normalsize\bfseries 3行取り中央の見出し
+\end{gyoudori}
+続く本文の行も，\cs{small}の行の位置に来る．
 \end{demo}
 
 \begin{itemize}
@@ -178,9 +196,9 @@ JLREQの行間（行送り$-$文字サイズ）と一致する．pLaTeXの標準
 \subsection{\cs{gyoudoriarea}命令}
 
 \begin{verbatim}
-\gyoudoriarea[<位置>]{<行数>}{<内容>}
+\gyoudoriarea[<オプション>]{<行数>}{<内容>}
 \end{verbatim}
-\env{gyoudori}環境と同じく行取りする．命令なので，直後の字下げの制御はない．
+\env{gyoudori}環境と同じく行取りする．\meta{オプション}も同じである．命令なので，直後の字下げの制御はない．
 
 \subsection{JLREQの配置方法との対応}\label{sec:pos}
 
@@ -389,6 +407,8 @@ $A(n)-h$につけ替え，段落を閉じてから置く．\TeX{}は直前の行
 ベースラインから$b$の位置，つまり$n+1$行目に来る．ページ（段）の先頭では，
 \cs{topskip}によって領域の上端が1行目の字の枠の上端につく．この置き方は
 阿部紀行氏の方法による（\url{https://abenori.blogspot.com/2017/12/gyodori.html}）．
+\opt{local}を付けたときは，$h$，$d$，$b$にその場の「あ」の高さ・深さと\cs{baselineskip}を
+使う．
 
 \env{gyoudori}環境と\cs{gyoudoriarea}は，置いた直後に\cs{nobreak}を入れて，見出しの
 直後での改ページを禁じる．\env{gyoudori}環境と数式の環境の後では，\LaTeX{}の
@@ -465,8 +485,9 @@ $A(n)-h$につけ替え，段落を閉じてから置く．\TeX{}は直前の行
 \section{制限事項}
 
 \begin{itemize}
-\item 行のグリッドは\cs{normalsize}の行送りが基準である．\cs{small}などのなかでは，まわりの
-  行とあわない．
+\item ディスプレイ数式とフロートの行取りは，\cs{normalsize}の行送りが基準である．
+  \cs{small}などのなかでは，まわりの行とあわない．\env{gyoudori}環境と
+  \cs{gyoudoriarea}は，\opt{local}を付ければまわりの行にそろう（\ref{sec:env}\nobreak 節）．
 \item 箇条書きの\cs{topsep}，\cs{itemsep}，\cs{parsep}は行送りの整数倍ではないので，
   箇条書きの中や前後では行の位置がずれる．
 \item フロートだけのページや段は対象外である．

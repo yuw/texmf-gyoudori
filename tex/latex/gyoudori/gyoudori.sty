@@ -44,6 +44,14 @@
     \global\@gyoudori@dp\dp\z@
     \global\@gyoudori@bs\normalbaselineskip
   \endgroup}
+% オプションlocal：その場の文字サイズの「あ」の高さ・深さと\baselineskipを基準にする
+\def\@gyoudori@metrics@local{%
+  \setbox\z@\hbox{あ}%
+  \global\@gyoudori@ht\ht\z@
+  \global\@gyoudori@dp\dp\z@
+  \global\@gyoudori@bs\baselineskip}
+% \@gyoudori@placeが使う基準．gyoudori環境と\gyoudoriareaのlocalで切り替える
+\let\@gyoudori@getmetrics\@gyoudori@metrics
 
 % #1行取りの領域の高さ：行送りに#1から1を減じた数を掛け，「あ」の高さと深さを加えた長さ
 \def\@gyoudori@areaheight#1{%
@@ -66,6 +74,23 @@
     \PackageError{gyoudori}{Undefined position `#1'}{%
       The position is t, c or b.}}{}}
 
+% gyoudori環境と\gyoudoriareaの省略可能な引数：位置（t/c/b）とlocalをカンマで区切って
+% 並べる．位置を\@gyoudori@posに得て，localがあれば基準をその場のものに切り替える
+\def\@gyoudori@options#1{%
+  \def\@gyoudori@pos{c}%
+  \let\@gyoudori@getmetrics\@gyoudori@metrics
+  \edef\@tempc{\zap@space#1 \@empty}%
+  \@for\@tempa:=\@tempc\do{%
+    \ifx\@tempa\@empty\else
+      \def\@tempb{local}%
+      \ifx\@tempa\@tempb
+        \let\@gyoudori@getmetrics\@gyoudori@metrics@local
+      \else
+        \@gyoudori@checkpos\@tempa
+        \let\@gyoudori@pos\@tempa
+      \fi
+    \fi}}
+
 %% 行取りの本体：#3を#2行取りして，位置#1（t/c/b）に置く．
 % 領域全体を1つのボックスにし，高さを1行目の字の枠の高さ（「あ」の高さ）に，深さを残り
 % 全部にして\baselineskipで置く．次の行は領域の最終行から\baselineskipで送る
@@ -74,7 +99,7 @@
 % つき，領域の中の位置は#1に従う．
 \newbox\@gyoudori@area
 \def\@gyoudori@place#1#2#3{%
-  \@gyoudori@metrics
+  \@gyoudori@getmetrics
   \setbox\@gyoudori@area\vbox to\@gyoudori@areaheight{#2}{%
     \csname @gyoudori@pos@#1\endcsname{#3}}%
   \dp\@gyoudori@area
@@ -104,9 +129,11 @@
 % 1行も入らないときは，見出し全体が次のページ（段）の先頭に送られる
 % （JLREQ 4.1.7 b）．
 \newbox\@gyoudori@box
+% localを付けると，\normalsizeではなくその場の文字サイズと行送りで行取りする
+% （\smallなどの中で，まわりの行にそろえる）．
 \newenvironment{gyoudori}[2][c]{%
-  \@gyoudori@checkpos{#1}%
-  \def\@gyoudori@args{{#1}{#2}}%
+  \@gyoudori@options{#1}%
+  \edef\@gyoudori@args{{\@gyoudori@pos}{#2}}%
   \setbox\@gyoudori@box\vbox\bgroup}{%
   \egroup
   \expandafter\@gyoudori@place\@gyoudori@args{\box\@gyoudori@box}%
@@ -114,8 +141,9 @@
 \AddToHook{env/gyoudori/after}{\@gyoudori@doendpe}
 
 \newcommand\gyoudoriarea[3][c]{%
-  \@gyoudori@checkpos{#1}%
-  \@gyoudori@place{#1}{#2}{#3}%
+  \@gyoudori@options{#1}%
+  \expandafter\@gyoudori@place\expandafter{\@gyoudori@pos}{#2}{#3}%
+  \let\@gyoudori@getmetrics\@gyoudori@metrics
   \nobreak}
 
 %% ディスプレイ数式の自動行取り（displaymath=true）

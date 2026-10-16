@@ -98,7 +98,8 @@ other than centering (Section~\ref{sec:pos}).
 The line pitch is \cs{normalbaselineskip}, and the height of the character
 frame is the height plus depth of the hiragana ``あ'' (the JFM metrics), both taken
 at \cs{normalsize}. Even inside \cs{small} etc., the grid of the main text is
-used.
+used (except with \opt{local} for the \env{gyoudori} environment and
+\cs{gyoudoriarea}; Section~\ref{sec:env}).
 
 The height of the character frame depends on the JFM. With the standard JFMs of
 upLaTeX and LuaTeX-ja (including \pkg{jlreq}) it equals the full-width size (a
@@ -175,13 +176,21 @@ Put \texttt{gyoudori.sty} into your TEXMF tree (e.g.\ \texttt{tex/latex/gyoudori
 \subsection{The \env{gyoudori} environment}\label{sec:env}
 
 \begin{verbatim}
-\begin{gyoudori}[<position>]{<lines>}
+\begin{gyoudori}[<options>]{<lines>}
 <content>
 \end{gyoudori}
 \end{verbatim}
-places \meta{content} in a \meta{lines}-line gyou-dori area. \meta{position} is
-\opt{t} (top), \opt{c} (center, default) or \opt{b} (bottom). The content is set
-in vertical mode, so it may contain several lines or size changes.
+places \meta{content} in a \meta{lines}-line gyou-dori area. \meta{options} is a
+comma-separated list of a position and \opt{local}. The position is \opt{t}
+(top), \opt{c} (center, default) or \opt{b} (bottom). The content is set in
+vertical mode, so it may contain several lines or size changes.
+
+With \opt{local}, the gyou-dori is based not on the line pitch of
+\cs{normalsize} but on the height and depth of ``あ'' in the current font size
+and on \cs{baselineskip}. Use it to keep the surrounding lines on their grid
+inside \cs{small} etc.\ (e.g.\ \verb|\begin{gyoudori}[b,local]{2}|). Without
+\opt{local}, the line pitch of \cs{normalsize} is used regardless of the font
+size.
 
 \begin{demo}
 A line of text. This is the last line of the preceding paragraph.
@@ -194,6 +203,17 @@ The paragraph after the heading stays on the line grid.
 A heading at the bottom of 2 lines
 \end{gyoudori}
 Text that follows without a blank line is not indented.
+\end{demo}
+
+The next example uses \opt{local} inside a part set in \cs{small}. The gray
+bands show the line positions of \cs{small}.
+
+\begin{demo}
+\small\GyBands[local]{5}A line of text set in \cs{small}.
+\begin{gyoudori}[local]{3}
+\normalsize\bfseries A heading centered in 3 lines
+\end{gyoudori}
+The following line also stays on the line positions of \cs{small}.
 \end{demo}
 
 \begin{itemize}
@@ -212,9 +232,9 @@ Text that follows without a blank line is not indented.
 \subsection{The \cs{gyoudoriarea} command}
 
 \begin{verbatim}
-\gyoudoriarea[<position>]{<lines>}{<content>}
+\gyoudoriarea[<options>]{<lines>}{<content>}
 \end{verbatim}
-works like the \env{gyoudori} environment. Being a command, it does not control
+works like the \env{gyoudori} environment, with the same \meta{options}. Being a command, it does not control
 the indentation of the following text.
 
 \subsection{Placement methods of JLREQ}\label{sec:pos}
@@ -453,6 +473,8 @@ distance $b$ from the baseline of the last line of the area, i.e.\ on line $n+1$
 At the top of a page (column), \cs{topskip} puts the top of the area on the top
 of the character frame of the first line. This is the method of Noriyuki Abe
 (\url{https://abenori.blogspot.com/2017/12/gyodori.html}).
+With \opt{local}, the height and depth of ``あ'' in the current font size and
+\cs{baselineskip} are used for $h$, $d$ and $b$.
 
 The \env{gyoudori} environment and \cs{gyoudoriarea} add \cs{nobreak} after the
 area to forbid a page break right after a heading. After the \env{gyoudori}
@@ -545,8 +567,11 @@ zero for the next paragraph unless a blank line follows.
 \section{Limitations}
 
 \begin{itemize}
-\item The grid is based on the line pitch of \cs{normalsize}; inside \cs{small}
-  etc.\ the lines do not match the surrounding text.
+\item Gyou-dori of display math and floats is based on the line pitch of
+  \cs{normalsize}; inside \cs{small} etc.\ the lines do not match the
+  surrounding text. The \env{gyoudori} environment and \cs{gyoudoriarea} keep
+  the surrounding lines on their grid with \opt{local}
+  (Section~\ref{sec:env}).
 \item \cs{topsep}, \cs{itemsep} and \cs{parsep} of lists are not multiples of
   the line pitch, so lines in and around lists are off the grid.
 \item Float-only pages and columns are not handled.

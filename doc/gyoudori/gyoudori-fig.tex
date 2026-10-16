@@ -89,18 +89,20 @@
   \end{tikzpicture}}
 
 %% 実例の背景に，行の位置（字の枠）をグレーの帯で描く
-%% 段落の1行目の先頭に置く．#1：帯の数．寸法はgyoudoriと同じ（\normalsizeの
-%% 「あ」の高さ・深さと\normalbaselineskip）
+%% 段落の1行目の先頭に置く．#2：帯の数．寸法はgyoudoriと同じ（\normalsizeの
+%% 「あ」の高さ・深さと\normalbaselineskip）．#1にlocalを指定すると，その場の
+%% 「あ」の高さ・深さと\baselineskipを使う
 \makeatletter
-\newcommand\GyBands[1]{%
+\newcommand\GyBands[2][]{%
   \leavevmode
-  \@gyoudori@metrics
+  \def\@tempa{#1}\def\@tempb{local}%
+  \ifx\@tempa\@tempb \@gyoudori@metrics@local \else \@gyoudori@metrics \fi
   \edef\GyHt{\strip@pt\@gyoudori@ht}%
   \edef\GyDp{\strip@pt\@gyoudori@dp}%
   \edef\GyBs{\strip@pt\@gyoudori@bs}%
   \edef\GyWd{\strip@pt\linewidth}%
   \rlap{\begin{tikzpicture}[overlay,x=1pt,y=1pt]
-    \foreach \i in {1,...,#1} {
+    \foreach \i in {1,...,#2} {
       \fill[black!12] (0,\GyHt-\i*\GyBs+\GyBs) rectangle
         (\GyWd,-\GyDp-\i*\GyBs+\GyBs);
     }

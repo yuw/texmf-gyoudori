@@ -33,7 +33,9 @@ cases where one has to typeset under such a specification.
 ## Features
 
 - The `gyoudori` environment and the `\gyoudoriarea` command place their
-  content in an 𝑛-line gyou-dori area (top, center or bottom).
+  content in an 𝑛-line gyou-dori area (top, center or bottom). With the
+  `local` option they follow the current font size and `\baselineskip`, so that
+  they also work inside `\small` etc.
 - Option `displaymath`: display math (`eqnarray`, `align`, `gather` and their
   starred forms) is centered by its baselines in the smallest area of at least
   two lines (a one-row display in an odd-line area sits on the middle line).
@@ -62,7 +64,18 @@ A heading
 \end{gyoudori}
 
 \gyoudoriarea[b]{2}{A heading}
+
+{\small
+Text in \small.
+\begin{gyoudori}[b,local]{2}  % local: use the current size and \baselineskip
+A heading
+\end{gyoudori}
+More text in \small stays on its own line grid.\par}
 ```
+
+The optional argument of the `gyoudori` environment and `\gyoudoriarea` is a
+comma-separated list of a position (`t`, `c`, `b`) and `local`. Without
+`local`, the line pitch of `\normalsize` is used regardless of the font size.
 
 Package options (key-value):
 
