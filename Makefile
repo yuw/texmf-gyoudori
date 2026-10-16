@@ -1,5 +1,6 @@
 dir = gyoudori
 docdir = doc/$(dir)
+docs = $(dir)-ja $(dir)-en
 
 all: status
 
@@ -8,16 +9,20 @@ status:
 
 # マニュアル（pLaTeX＋dvipdfmx）
 doc:
-	cd $(docdir); TEXINPUTS=../../tex/latex/$(dir)//: platex $(dir)-ja
-	cd $(docdir); TEXINPUTS=../../tex/latex/$(dir)//: platex $(dir)-ja
-	cd $(docdir); dvipdfmx $(dir)-ja
-	cd $(docdir); rm -f $(dir)-ja.aux $(dir)-ja.log $(dir)-ja.dvi
+	for d in $(docs); do \
+	  (cd $(docdir) && \
+	   TEXINPUTS=../../tex/latex/$(dir)//: platex $$d && \
+	   TEXINPUTS=../../tex/latex/$(dir)//: platex $$d && \
+	   dvipdfmx $$d && \
+	   rm -f $$d.aux $$d.log $$d.dvi) || exit 1; \
+	done
 
 ctan:
 	mkdir -p tmp/$(dir)/doc
-	cp $(docdir)/$(dir)-ja.tex $(docdir)/$(dir)-ja.pdf tmp/$(dir)/doc
+	cp $(docdir)/$(dir)-fig.tex tmp/$(dir)/doc
+	for d in $(docs); do cp $(docdir)/$$d.tex $(docdir)/$$d.pdf tmp/$(dir)/doc; done
 	cp -a tex/latex/$(dir) tmp/$(dir)/tex
-	cp README.md tmp/$(dir)
+	cp README.md LICENSE tmp/$(dir)
 	cd tmp; zip -r $(dir).zip $(dir)
 	mv tmp/$(dir).zip .
 	rm -r tmp

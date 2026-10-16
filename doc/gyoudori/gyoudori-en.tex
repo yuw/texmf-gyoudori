@@ -1,0 +1,583 @@
+%% gyoudori-en.tex: manual of the gyoudori package (English)
+%% Build: platex gyoudori-en && platex gyoudori-en && dvipdfmx gyoudori-en
+\documentclass[paper=a4,dvipdfmx]{jlreq}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usepackage[displaymath]{gyoudori}
+\input{gyoudori-fig}
+
+\newcommand\pkg[1]{\textsf{#1}}
+\newcommand\opt[1]{\texttt{#1}}
+\newcommand\env[1]{\texttt{#1}}
+\newcommand\cs[1]{\texttt{\char`\\#1}}
+\newcommand\meta[1]{$\langle$\textit{#1}$\rangle$}
+\newenvironment{demo}
+  {\par\medskip\noindent
+   \begin{minipage}{\linewidth}\hrule\smallskip}
+  {\par\smallskip\hrule\end{minipage}\par\medskip}
+\renewcommand\figurename{Figure\nobreakspace}
+\renewcommand\abstractname{Abstract}
+\renewcommand\refname{References}
+
+\title{The \pkg{gyoudori} package\\[.5ex]\large Gyou-dori (line-based placement)
+  for Japanese typesetting}
+\author{Yuwsuke Kieda}
+\date{2026-10-16\quad v20261016.0}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The \pkg{gyoudori} package places headings, display math and floats by
+\emph{gyou-dori}, so that the lines of the main text before and after them stay
+on the line positions of the kihon-hanmen (the line grid). It works with pLaTeX,
+upLaTeX and LuaLaTeX (LuaTeX-ja). A Japanese manual (\texttt{gyoudori-ja.pdf})
+is also available.
+\end{abstract}
+
+\section{What is gyou-dori?}
+
+\emph{Gyou-dori} (行取り, also written 行ドリ) is one of the arbitrary layouts: the
+space in the block direction occupied by an element whose size differs from the
+main text, such as a heading, is determined as a number of lines of the
+kihon-hanmen (the basic page format), so that the lines of the main text after
+it are not shifted off the line positions defined by the kihon-hanmen (the line
+grid).
+
+Gyou-dori is used in typesetting Japanese books and the like when it is
+specified that the lines of the main text on each page be placed on the line
+grid. It is called arbitrary because aligning lines to the grid is not in itself
+a principle of readability. A grid layout is often specified regardless of, or
+even ignoring, the benefit of readers, and is not seldom a choice that abandons
+the consideration of page design. Page design should rather pursue the benefit
+of readers without being tightly bound to the line grid. This package is a tool
+for cases where one has to typeset under such a specification.
+
+\subsection{The gyou-dori area}
+
+As defined in JLREQ (W3C \textit{Requirements for Japanese Text Layout})
+\S4.1.6, the block-direction size of the area of an
+$n$-line gyou-dori is
+\[
+  \text{character frame}\times n + \text{line gap}\times(n-1)
+  = \text{line pitch}\times(n-1) + \text{character frame},
+\]
+that is, the range from the top of the character frame of the first line to the
+bottom of the character frame of the $n$-th line (Figure~\ref{fig:area}).
+Visually, a line gap is added before and after the area in the middle of a page
+(or column), and only after it at the top of a page (or column).
+The line pitch in the figure is shown as the distance between baselines (dashed
+lines). In this manual, the reference point for measuring the line pitch is
+tentatively taken to be the baseline (Section~\ref{sec:pitch}).
+
+\begin{figure}[htbp]
+  \centering
+  \GyFigArea{text}{char.\ frame}{line gap}{line pitch}{3-line area}{heading}%
+    {$3\times\text{frame}+2\times\text{gap}$}
+  \caption{A 3-line gyou-dori area with a heading at its center}
+  \label{fig:area}
+\end{figure}
+
+By default this package places the content at the center of the area. The
+position argument (\opt{t}, \opt{c}, \opt{b}) changes it to top or bottom
+alignment (Figure~\ref{fig:pos}). Where in the area the content should be placed
+depends on the specification of each typesetting job; JLREQ, too, lists methods
+other than centering (Section~\ref{sec:pos}).
+
+\begin{figure}[htbp]
+  \centering
+  \GyFigPos{text}{\opt{t}: top}{\opt{c}: center (default)}{\opt{b}: bottom}
+  \caption{Positions in the area}
+  \label{fig:pos}
+\end{figure}
+
+\subsection{Dimensions used by this package}\label{sec:dims}
+
+The line pitch is \cs{normalbaselineskip}, and the height of the character
+frame is the height plus depth of the hiragana ``あ'' (the JFM metrics), both taken
+at \cs{normalsize}. Even inside \cs{small} etc., the grid of the main text is
+used.
+
+The height of the character frame depends on the JFM. With the standard JFMs of
+upLaTeX and LuaTeX-ja (including \pkg{jlreq}) it equals the full-width size (a
+square frame), which agrees with JLREQ. With the standard JFM of pLaTeX
+(\texttt{jis}) it is 0.952 times the full-width size. Since this package
+follows the frame of the JFM, an area in pLaTeX is shorter than the JLREQ
+definition by 0.048 times the full-width size.
+
+\subsection{Reference point of line pitch and \cs{baselineskip}}\label{sec:pitch}
+
+JLREQ (note in \S2.4.2) defines the line feed (line pitch) as ``the distance
+between two adjacent lines measured from their reference points'', but does not
+fix the reference point itself. It says that the reference point differs from
+implementation to implementation and that the vertical center of the character
+frame is commonly used in horizontal writing, without giving any evidence for
+this. Moreover, \LaTeX{} (\TeX{}) stacks lines by their baselines, which is far
+from the idea of using the vertical center as the reference point.
+
+This manual therefore tentatively takes the baseline as the reference point of
+the line pitch, because both the default behavior of \LaTeX{} and the
+implementation of this package are based on baselines. That is, the line pitch
+is the distance between baselines.
+
+\cs{baselineskip} of \LaTeX{} is the distance between the baselines of adjacent
+lines. \TeX{} inserts glue between lines, computed from the depth of the previous
+line and the height of the next, so that the baselines are \cs{baselineskip}
+apart; however, if the space between the lines would be less than
+\cs{lineskiplimit}, \cs{lineskip} is inserted instead and the distance becomes
+larger than \cs{baselineskip}.
+
+This package uses \cs{normalbaselineskip} at \cs{normalsize} as the line pitch
+$b$ of the main text (a change by \cs{linespread} is reflected in it), and
+regards the positions where baselines are $b$ apart as the line positions of the
+main text (the line grid). The character frame of each line extends from the
+baseline upward by the height $h$ of ``あ'' and downward by its depth $d$. Hence
+the area of an $n$-line gyou-dori extends from $h$ above the baseline of the first
+line to $d$ below the baseline of the $n$-th line, and its size is $(n-1)b+h+d$.
+The area is placed so that the baseline of its first line is at distance $b$ from
+the baseline of the preceding line, and the baseline of the line after the area
+is at distance $b$ from the baseline of the $n$-th line
+(Section~\ref{sec:place}). Display math, too, is placed so that the midpoint
+between the baselines of its first and last rows coincides with the midpoint
+between the baselines of the first and last lines of the area
+(Section~\ref{sec:math}).
+
+Between lines consisting of characters of the same size, the value of the line
+pitch does not depend on the choice of the reference point; neither does the
+JLREQ relation (line feed $=$ character size $+$ line gap) nor the formula for
+the size of the area. The reference point matters only for lines with
+characters of different sizes, such as a large heading: then the distance
+between baselines differs from that between vertical centers. This package puts
+such headings into gyou-dori areas and keeps the surrounding lines of the main
+text on the line grid by their baselines.
+
+The line gap of this package (line pitch $-$ height of the character frame)
+equals the line gap of JLREQ (line feed $-$ character size) for JFMs with a
+square frame. With the standard JFM of pLaTeX, whose frame height is 0.952 times
+the full-width size, it is larger than the JLREQ line gap by 0.048 times the
+full-width size.
+
+\section{Requirements and installation}
+
+\begin{itemize}
+\item pLaTeX, upLaTeX, or LuaLaTeX with LuaTeX-ja (\pkg{ltjsarticle},
+  \pkg{jlreq}, etc.). Horizontal writing only.
+\item \LaTeX{} 2020-10-01 or later (the package uses \cs{AddToHook}).
+\item The \pkg{kvoptions} package.
+\end{itemize}
+
+Put \texttt{gyoudori.sty} into your TEXMF tree (e.g.\ \texttt{tex/latex/gyoudori/}).
+
+\section{Usage}
+
+\subsection{The \env{gyoudori} environment}\label{sec:env}
+
+\begin{verbatim}
+\begin{gyoudori}[<position>]{<lines>}
+<content>
+\end{gyoudori}
+\end{verbatim}
+places \meta{content} in a \meta{lines}-line gyou-dori area. \meta{position} is
+\opt{t} (top), \opt{c} (center, default) or \opt{b} (bottom). The content is set
+in vertical mode, so it may contain several lines or size changes.
+
+\begin{demo}
+A line of text. This is the last line of the preceding paragraph.
+\begin{gyoudori}{3}
+\large A heading centered in 3 lines
+\end{gyoudori}
+
+The paragraph after the heading stays on the line grid.
+\begin{gyoudori}[b]{2}
+A heading at the bottom of 2 lines
+\end{gyoudori}
+Text that follows without a blank line is not indented.
+\end{demo}
+
+\begin{itemize}
+\item If no blank line follows \verb|\end{gyoudori}|, the following text is
+  neither indented nor preceded by \cs{parskip}, as after a display math.
+  A blank line starts a new paragraph, indented and preceded by \cs{parskip}.
+\item The area is never split. If it does not fit at the bottom of a page
+  (column), the whole heading moves to the top of the next page (column)
+  (JLREQ \S4.1.7~a, c).
+\item No page (column) break is allowed right after the heading. If not even
+  one line of text fits after the heading, the whole heading moves to the next
+  page (column) (JLREQ \S4.1.7~b). In both cases the bottom of the previous page
+  (column) is left blank.
+\end{itemize}
+
+\subsection{The \cs{gyoudoriarea} command}
+
+\begin{verbatim}
+\gyoudoriarea[<position>]{<lines>}{<content>}
+\end{verbatim}
+works like the \env{gyoudori} environment. Being a command, it does not control
+the indentation of the following text.
+
+\subsection{Placement methods of JLREQ}\label{sec:pos}
+
+JLREQ \S4.1.6 lists four methods (a--d) of placing a heading by gyou-dori.
+They are written with this package as follows.
+\begin{description}
+\item[a. Center of a multi-line area] \verb|\begin{gyoudori}{3}|.
+\item[b. Centered, with blank lines before or after] Combine with a space of
+  whole lines. For a one-line space before the heading, put
+  \verb|\vspace{\baselineskip}| before the environment.
+\item[c. A specified position in the area] Top (\opt{t}) and bottom (\opt{b})
+  are provided. For other positions, put space into the content.
+\item[d. A one-line heading on a line position with a blank line before] For a
+  heading in the text size, a 2-line area with bottom alignment (position
+  \opt{b}, 2 lines) gives the same result.
+\end{description}
+\paragraph{When a heading area comes to the top of a page}
+The area of a heading, too, is placed at the top of the kihon-hanmen at the top
+of a page (or column), and the position in the area follows the position option
+(Section~\ref{sec:edge}). For example, when the ``low-level heading with a
+one-line space before it'' of method d (a 2-line area with bottom alignment)
+comes to the top of a page, the first line is left blank and the heading is on
+the second line. This is the policy ``always keep the one-line space'' of JLREQ
+\S4.1.8.
+
+\subsection{Gyou-dori areas at the top and bottom of a page}\label{sec:edge}
+
+Not only headings: an area of the \env{gyoudori} environment, of
+\cs{gyoudoriarea}, or of display math may happen to come to the top or bottom of
+a page (or column) as the text flows. It then behaves as follows. Floats are not
+covered here, since \LaTeX{} decides where they go (Section~\ref{sec:float}).
+
+\paragraph{When a gyou-dori area comes to the top of a page}
+The area itself is placed at the top of the kihon-hanmen (\emph{tentsuki}), with
+no line gap before it. The position in the area follows the position option
+(\opt{t}, \opt{c}, \opt{b}) as in the middle of a page
+(Figure~\ref{fig:top}), and the line after an $n$-line area starts on line
+$n+1$. The same holds for display math: the formula is placed in the area at the
+same position as in the middle of a page.
+
+\begin{figure}[htbp]
+  \centering
+  \GyFigTop{heading}{middle of a page\\(\opt{c})}{top of a page\\(\opt{t})}%
+    {top of a page\\(\opt{c})}{top of a page\\(\opt{b})}{top of the kihon-hanmen}
+  \caption{A 3-line area in the middle and at the top of a page (numbers on the
+    left are line numbers)}
+  \label{fig:top}
+\end{figure}
+
+\paragraph{When a gyou-dori area comes to the bottom of a page}
+The area is never split. If it fits by the last line of the kihon-hanmen, it
+stays on the page; otherwise the whole area moves to the top of the next page
+(column), and the bottom of the previous page (column) is left blank for the
+lines that did not fit.
+\begin{itemize}
+\item The \env{gyoudori} environment and \cs{gyoudoriarea} are meant for
+  headings and allow no page (column) break right after them. If the area ends
+  on the last line and not even one line of text fits after it, the whole area
+  moves to the next page (column) (Section~\ref{sec:env}).
+\item A page break is allowed after display math. If the area ends on the last
+  line, it stays on the page and the following text starts on the first line of
+  the next page (column). A multi-line display is a single area, so it is not
+  broken across pages even with \cs{allowdisplaybreaks}.
+\end{itemize}
+
+\section{Package options}
+
+Options are given as key-value pairs. For a Boolean option, the key alone means
+\opt{true}.
+\begin{verbatim}
+\usepackage[displaymath,float,textfloatsep=2\baselineskip]{gyoudori}
+\end{verbatim}
+
+\subsection{\opt{displaymath=true|false}}
+
+Display math is placed by gyou-dori automatically. The default is \opt{false}.
+The environments \env{eqnarray}, \env{align} and \env{gather} and their starred
+forms are handled (\env{align} and \env{gather} need \pkg{amsmath}). Each display
+is placed so that the midpoint between the baselines of its first and last rows
+coincides with the midpoint between the baselines of the first and last lines of
+the area; a one-row display in an area of an odd number of lines thus sits on
+the baseline of the middle line. The number of lines is the smallest (at least
+two) with which the display fits at this position; the display may extend into
+the outer line gaps by up to half of them, so that at least half of the line gap
+remains to the character frames of the adjacent lines.
+\cs{abovedisplayskip} and the like are not used. Equation numbers, \cs{label}
+and \cs{eqref} work as they do without this option.
+
+\begin{demo}
+\GyBands{8}A line of text. The following display is placed by gyou-dori.
+\begin{align}
+  a &= b + c \\
+  d &= e
+\end{align}
+The text after the display is on the grid.
+\begin{gather*}
+  x = y
+\end{gather*}
+A line of text.
+\end{demo}
+
+The gray bands show the line positions (the character frame of each line).
+In this example, the \env{align} is centered in a 3-line area and the
+\env{gather*} in a 2-line area, and the text before and after them stays on the
+bands. Since \env{align} and \env{gather} of \pkg{amsmath} insert \cs{strut} in
+every row, the number of lines of a two-row \env{align} depends on the line
+pitch of the class (three lines with \pkg{jlreq} used for this manual, two lines
+with \pkg{jsarticle}).
+
+Larger displays with fractions, integrals and sums are also placed in the smallest area that holds them.
+
+\begin{demo}
+\GyBands{13}A line of text. An integral and a sum:
+\begin{gather}
+  \int_0^1 f(x)\,dx = \sum_{k=1}^{n} \frac{a_k}{k!}
+\end{gather}
+Text after the display. Two rows:
+\begin{align}
+  S_n &= \sum_{k=1}^{n} k = \frac{n(n+1)}{2} \\
+  I &= \int_{-\infty}^{\infty} e^{-x^2}\,dx = \sqrt{\pi}
+\end{align}
+More text. A case analysis:
+\begin{gather}
+  f(x) =
+  \begin{cases}
+    \frac{x^2}{2} & (x \ge 0) \\
+    -x & (x < 0)
+  \end{cases}
+\end{gather}
+The last line of text.
+\end{demo}
+
+In this example, the displays take two, four and three lines, and the text after each of them starts on a band.
+
+\subsection{\opt{float=true|false}}\label{sec:float}
+
+Floats are placed by gyou-dori. The default is \opt{false}.
+\begin{itemize}
+\item A float is put into the smallest gyou-dori area (at least one line) that
+  holds it.
+\item When its place is decided, the float is aligned in the area: at the top
+  of a page, to the top, with the top of the area on the top of the character
+  frame of the first line; at the bottom, to the bottom, with the bottom of the
+  area on the bottom of the character frame of a line; and here (\opt{h}), to the
+  center, aligned with the lines before and after it.
+\item The five float separations (\cs{floatsep} etc.; see below) are rounded up
+  to the smallest value of the form ``line gap $+$ a multiple of the line
+  pitch'' that is not less than the given value, without stretch or shrink.
+  \cs{intextsep}, which is used both above and below, takes half of the line gap.
+\end{itemize}
+Thus the text lines around floats stay on the grid. \LaTeX{} changes a lone
+\opt{[h]} into \opt{[ht]}; a float that goes to the top instead is realigned to
+the top. No column break is allowed right before a float placed here.
+
+\subsection{\opt{floatsep}, \opt{textfloatsep}, \opt{intextsep},
+  \opt{dblfloatsep}, \opt{dbltextfloatsep}}
+
+Set the length of the same name. If not given, the value of the document class
+is used. With \opt{float=true}, the value is rounded as described above.
+
+\section{Use with other packages}
+
+The following applies with \opt{float=true}.
+\begin{description}
+\item[\pkg{nidanfloat}] A double-column float (\env{figure*}) is aligned to the
+  top of the page, or to the bottom of the character frame of the last line
+  that fits in the page. A single-column bottom float in two-column mode is
+  aligned to the last line of the column. The loading order does not matter.
+\item[\pkg{stfloats}] Double-column floats at the top and bottom are aligned
+  likewise.
+\item[\pkg{flushend}] The glue in the balanced columns of the last page is not
+  stretched or shrunk, so the lines stay on the grid (the \opt{spread} and
+  \opt{shrink} options have no effect). The gap where the two columns are joined
+  is rounded up to a multiple of the line pitch.
+\item[\pkg{evenend}] (LuaLaTeX) Floats on the balanced last page are aligned to
+  the top or bottom of the column.
+\end{description}
+
+\section{Relation to JLREQ}
+
+The behavior of this package was checked against the description of gyou-dori
+in JLREQ.
+
+\begin{description}
+\item[Reference point of the line pitch (note in \S2.4.2)] JLREQ does not fix it.
+  This package takes the baseline as the reference point
+  (Section~\ref{sec:pitch}).
+\item[Size of the area (\S2.5.2, \S4.1.6)] Agrees. As the frame of the JFM is
+  used, an area in pLaTeX with the standard JFM is shorter than the definition
+  with a square frame by 0.048 times the full-width size (Section~\ref{sec:dims}).
+\item[Placement in the area (\S4.1.6 a--d)] a is the default center and c is
+  covered by top and bottom alignment; b and d are realized by combination
+  (Section~\ref{sec:pos}).
+\item[Heading at the bottom of a page or column (\S4.1.7)] Agrees. If the area
+  does not fit, or if no text line fits after the heading, the whole heading
+  moves to the next page (column). The exception for even pages in vertical
+  writing does not apply, since only horizontal writing is supported.
+\item[Heading at the top of a page (\S4.1.6, \S4.1.8)] Agrees. The area is
+  placed at the top of the kihon-hanmen and only the line gap after it is added
+  (\S4.1.6). For a low-level heading with a one-line space before it, this is the
+  policy ``always keep the one-line space'' among the three in \S4.1.8
+  (Section~\ref{sec:pos}).
+\item[Blank space at the end of a column (\S4.1.7 c)] JLREQ prefers some
+  processing to avoid it but allows it if unavoidable. This package leaves it
+  blank.
+\item[Display math (note in \S4.1.6)] For a display formula larger than the
+  text size, JLREQ mentions two methods: specifying the area by gyou-dori, or
+  keeping a minimum line gap before and after and adjusting the remainder within
+  the page or column. \opt{displaymath} follows the former. The minimum of two
+  lines is a design choice of this package.
+\item[Illustrations (\S2.5.2, \S4.3)] JLREQ says that the block-direction space
+  of illustrations should also be aligned to the line positions of the
+  kihon-hanmen; \opt{float} follows this. Avoiding a single text line before or
+  after an illustration (\S4.3) is left to the float placement of \LaTeX.
+\end{description}
+
+\section{How it works}
+
+\subsection{Notation}
+
+$b$: the line pitch (\cs{normalbaselineskip} at \cs{normalsize});
+$h$, $d$: the height and depth of ``あ'' at \cs{normalsize} (the character
+frame); $g=b-h-d$: the line gap; $A(n)=(n-1)b+h+d$: the height of an $n$-line
+area.
+
+\subsection{Placing a gyou-dori area}\label{sec:place}
+
+The content is set in a \cs{vbox} of height $A(n)$ with \cs{vss} after, around
+or before it (for \opt{t}, \opt{c} and \opt{b}). The height of this box is changed
+to $h$ and its depth to $A(n)-h$, and the box is put after the paragraph is
+ended. \TeX{} inserts \cs{baselineskip} glue so that the baseline of the box (the
+baseline of the first line of the area) is at distance $b$ from the previous
+baseline. After the box, \cs{prevdepth} is set to $d$, so the next line is at
+distance $b$ from the baseline of the last line of the area, i.e.\ on line $n+1$.
+At the top of a page (column), \cs{topskip} puts the top of the area on the top
+of the character frame of the first line. This is the method of Noriyuki Abe
+(\url{https://abenori.blogspot.com/2017/12/gyodori.html}).
+
+The \env{gyoudori} environment and \cs{gyoudoriarea} add \cs{nobreak} after the
+area to forbid a page break right after a heading. After the \env{gyoudori}
+environment and the display math environments, the same mechanism as
+\cs{@doendpe} of \LaTeX{} suppresses the indentation and sets \cs{parskip} to
+zero for the next paragraph unless a blank line follows.
+
+\subsection{Display math}\label{sec:math}
+
+\begin{enumerate}
+\item With the environment hooks (\texttt{env/<name>/before} and \texttt{after}),
+  a \cs{vbox} is opened outside the environment, and the display is set in it
+  with \cs{abovedisplayskip} etc.\ set to zero.
+\item A \cs{penalty}~$-10000$ is put at the top of this box. When a copy of the
+  finished box is split by \cs{vsplit} with \cs{splittopskip} set to a large value
+  $S$, the rest begins with glue of ``$S-{}$the height of the first row''. Thus
+  ``the height of the rest $-S$'' is the distance $\Delta$ between the baselines of
+  the first and last rows.
+\item Let $H$ and $D$ be the height and depth of the box. The baseline of the
+  last row is at $H$ from the top of the box, and that of the first row at
+  $H-\Delta$. With the distance from the top of the area to the top of the box
+  \[ y = h + \frac{(n-1)b}{2} - H + \frac{\Delta}{2}, \]
+  the midpoint of the baselines of the display coincides with that of the area.
+\item Starting from $n=2$, the smallest $n$ with $-g/2\le y$ and
+  $y+H+D\le A(n)+g/2$ is used (the box may extend into the outer line gaps by up
+  to half of them).
+\item The box is lowered by $y$ in the area, which is placed in the same way
+  as in Section~\ref{sec:place}.
+\end{enumerate}
+
+\subsection{Floats}
+
+\begin{description}
+\item[Size] After \cs{@endfloatbox}, the float box is rebuilt as a \cs{vbox} of
+  height $A(n)$ for the smallest $n\ge1$ with height $+$ depth $\le A(n)$ (the
+  content at the top).
+\item[Realignment] When the placement is decided, the content is placed at
+  position $p$ (\opt{t}, \opt{c}, \opt{b}) and lowered by $\delta$, keeping the outer
+  dimensions (height and depth) of the box. Thus the float placement of \LaTeX{}
+  is not affected, and the mark of double-column floats (depth 1\,sp) is kept.
+\item[Top floats (\cs{@cflt})] $p=\opt{t}$, $\delta=\cs{topskip}-h$; the top of the
+  area is on the top of the character frame of the first line.
+\item[Bottom floats (\cs{@cflb})] $p=\opt{b}$, $\delta=d-d_{\mathrm{last}}$, where
+  $d_{\mathrm{last}}$ is the depth of the last box in the column modulo $b$ (it is
+  $d$ if the last box is a gyou-dori area). After the floats, an empty line of
+  height 0 and depth $d$ and glue of ``$r-d$'' are added, where $r$ is ``the
+  column height $-\cs{topskip}$'' modulo $b$. Then, even when the floats are
+  pushed down by the \cs{vfil} of \cs{clearpage}, their bottom is on the bottom of
+  the character frame of the last line in the column, and no overfull box occurs
+  in classes where that bottom goes below the type area. When pushed down (the
+  column ends with glue), $\delta=0$ and the stretch of \cs{@textbottom} is
+  cancelled.
+\item[Here floats (\cs{@addtocurcol})] $p=\opt{c}$,
+  $\delta=g/2+d-d_{\mathrm{prev}}$, where $d_{\mathrm{prev}}$ is the depth of the
+  previous line modulo $b$. A \cs{nobreak} is inserted before the float so that
+  it does not start a column.
+\item[Rounding of separations] Each separation is set to the smallest value of
+  the form $g+kb$ ($k\ge0$ an integer) that is not less than the given value,
+  without stretch or shrink; \cs{intextsep}, used above and below, is
+  $g/2+kb$. Then ``float area $+$ separation'' is a multiple of $b$, and the text
+  lines are not shifted.
+\item[Order of footnotes] The \cs{@makecol} of pLaTeX puts footnotes after the
+  floats, so their height is subtracted from the column height when computing
+  $r$. The \cs{@makecol} of \LaTeX{} 2025-06-01 or later (e.g.\ LuaLaTeX) puts the
+  floats after the footnotes, so in a column with bottom floats a \cs{vfil} is put
+  before the footnotes to place the footnotes and the floats at the bottom.
+\end{description}
+
+\subsection{Interfaces to other packages}
+
+\begin{description}
+\item[Double-column floats] They are handled in \cs{@comdblflelt}. A float in
+  \cs{@dbltoplist} is at the top: $p=\opt{t}$, $\delta=\cs{topskip}-h$. Otherwise it is at the bottom
+  (\pkg{nidanfloat}, \pkg{stfloats}): $p=\opt{b}$, $\delta=d-r$ with $r$ being
+  ``$\cs{textheight}-\cs{topskip}$'' modulo $b$, and a \cs{vfil} is put before the
+  floats.
+\item[\pkg{nidanfloat}] Top floats of each column are handled as by \cs{@cflt}.
+  \cs{L@cflb} and \cs{R@cflb} are replaced so that the bottom floats are aligned to
+  the last line in the column, with the stretch between the text and the floats.
+\item[\pkg{flushend}] After the columns of the last page are built, they are
+  rebuilt without stretching or shrinking the glue in them (with fill glue at the
+  end). Where the two columns are joined (\cs{atColsBreak}), the distance from
+  the baseline of the last element of the left column to that of the first
+  element of the right column is rounded up to a multiple of $b$, taking the
+  shift $\delta$ of float boxes into account.
+\item[\pkg{evenend}] Before the copies of column floats on the last page are
+  taken, top floats are realigned to \opt{t} and bottom floats to \opt{b}.
+\end{description}
+
+\section{Limitations}
+
+\begin{itemize}
+\item The grid is based on the line pitch of \cs{normalsize}; inside \cs{small}
+  etc.\ the lines do not match the surrounding text.
+\item \cs{topsep}, \cs{itemsep} and \cs{parsep} of lists are not multiples of
+  the line pitch, so lines in and around lists are off the grid.
+\item Float-only pages and columns are not handled.
+\item Vertical writing is not supported. \cs{flushbottom} and the \opt{[H]}
+  placement of the \pkg{float} package have not been tested.
+\item When \pkg{flushend}, footnotes, and a bottom or here float on the last page
+  come together, text may be shifted by about 1\,pt.
+\item \cs{fnbelowfloat} of \pkg{stfloats} has no effect in pLaTeX, which uses
+  its own \cs{@makecol}.
+\item In classes whose text height is not on the line grid (e.g.\ \pkg{jarticle}
+  of pLaTeX), there is a remainder below the last line, so the area of display
+  math may extend below the last line by up to one line. The \env{gyoudori}
+  environment and \cs{gyoudoriarea} allow no break right after them, so they
+  move to the next page (column) instead.
+\item Known, not yet fixed: with \pkg{nidanfloat} and \opt{displaymath} together,
+  text lines may be shifted off the grid. The processing of \pkg{nidanfloat} that
+  moves text overflowing the left column into the right column seems to interfere
+  with the large depth of the boxes of gyou-dori areas.
+\end{itemize}
+
+\section{References}
+
+\begin{itemize}
+\item W3C, \textit{Requirements for Japanese Text Layout},
+  \url{https://www.w3.org/TR/jlreq/}
+\item Noriyuki Abe, \textit{Gyodori} (in Japanese),
+  \url{https://abenori.blogspot.com/2017/12/gyodori.html}
+\end{itemize}
+
+\section{License}
+
+MIT License.
+
+\end{document}

@@ -1,11 +1,13 @@
-%% gyoudori-ja.tex: gyoudoriパッケージのマニュアル
-%% 組版：platex gyoudori-ja && dvipdfmx gyoudori-ja
-\documentclass[a4paper]{jsarticle}
+%% gyoudori-ja.tex: gyoudoriパッケージのマニュアル（日本語版）
+%% 組版：platex gyoudori-ja && platex gyoudori-ja && dvipdfmx gyoudori-ja
+\documentclass[paper=a4,dvipdfmx]{jlreq}
 \usepackage{amsmath}
 \usepackage{url}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
 \usepackage[displaymath]{gyoudori}
+\input{gyoudori-fig}
 
-\makeatletter
 \newcommand\pkg[1]{\textsf{#1}}
 \newcommand\opt[1]{\texttt{#1}}
 \newcommand\env[1]{\texttt{#1}}
@@ -16,217 +18,483 @@
   {\par\medskip\noindent
    \begin{minipage}{\linewidth}\hrule\smallskip}
   {\par\smallskip\hrule\end{minipage}\par\medskip}
-\makeatother
 
-\title{\pkg{gyoudori}パッケージ\\行ドリの実現}
-\author{Yuwsuke Kieda}
-\date{2026年9月25日\quad v20260925.0}
+\title{\pkg{gyoudori}パッケージ\\[.5ex]\large 行取り（行ドリ）の実現}
+\author{木枝祐介}
+\date{2026年10月16日\quad v20261016.0}
 
 \begin{document}
 \maketitle
 
-\section{概要}
+\begin{abstract}
+\pkg{gyoudori}は，見出し・ディスプレイ数式・フロートを行取り（行ドリ）で配置し，
+その前後の本文の行を基本版面の行位置からずらさないための\LaTeX{}パッケージである．
+pLaTeX，upLaTeX，LuaLaTeX（LuaTeX-ja）で動く．
+英語版のマニュアル（\texttt{gyoudori-en.pdf}）もある．
+\end{abstract}
 
-\pkg{gyoudori}は，見出しなどを行ドリ（行取り）で組むための\LaTeX{}パッケージです．
-行ドリとは，ある要素を本文の行送りの何行分かの領域に配置し，その前後の本文の行を
-行送りの位置（行のグリッド）からずらさない組み方です
-（\url{https://www.w3.org/TR/jlreq/#processing_of_gyoudori}）．
+\section{行取りとは何か}
 
-このパッケージは次の機能を提供します．
+\emph{行取り}（行ドリ）とは恣意的なレイアウトのひとつで，見出しのように本文と大きさの
+違う要素が行送り方向に占める領域を基本版面の何行分かとして決め，その後ろの本文の行を，
+基本版面で決めた行の位置（行のグリッド）からずらさないようにする方法である．
+
+行取りは，日本語の書籍などの組版で，各ページの本文の行を行のグリッドにそろえて配置する
+よう指定されたときに用いられる．恣意的というのは，行のグリッドにそろえること自体が，
+読みやすさのための原則ではないからである．行のグリッドに
+そろえる指定は，読者の利益とは無関係に，あるいは読者の利益を無視して行われることが
+しばしばあり，誌面デザインの検討を放棄した選択になっている場合も少なくない．本来は，
+行のグリッドに強く縛られることなく，読者の利益を追求して誌面をデザインすべきである．
+このパッケージは，そうした指定のもとで組版しなければならない場合のための道具である．
+
+\subsection{行取りの領域}
+
+$n$行取りの領域の行送り方向の大きさは，JLREQ（W3C『日本語組版処理の要件』）\S4.1.6の定義のとおり
+\[
+  \text{字の枠の高さ}\times n + \text{行間}\times(n-1)
+  = \text{行送り}\times(n-1) + \text{字の枠の高さ}
+\]
+である．つまり，$n$行分の行の位置のうち，1行目の字の枠の上端から$n$行目の字の枠の
+下端までの範囲である（図\nobreak\ref{fig:area}）．見た目には，ページ（段）の途中ではこの領域の
+前後に行間が加わり，ページ（段）の先頭では後ろにだけ行間が加わる．
+図の行送りは，ベースライン（破線）どうしの間隔で示している．このマニュアルでは，
+行送りを測る基準点を仮にベースラインとしている（\ref{sec:pitch}\nobreak 節）．
+
+\begin{figure}[htbp]
+  \centering
+  \GyFigArea{本文}{字の枠}{行間}{行送り}{3行取りの領域}{見出し}%
+    {$3\times\text{字の枠}+2\times\text{行間}$}
+  \caption{3行取りの領域と，その中央に置いた見出し（3行取り中央）}
+  \label{fig:area}
+\end{figure}
+
+このパッケージは，既定では内容を領域の中央に置く．位置の指定（\opt{t}，\opt{c}，
+\opt{b}）で，上寄せと下寄せに変えられる（図\nobreak\ref{fig:pos}）．領域の中のどこに置くかは
+組版の指定によって異なり，JLREQも中央のほかの配置方法をあげている（\ref{sec:pos}\nobreak 節）．
+
+\begin{figure}[htbp]
+  \centering
+  \GyFigPos{本文}{\opt{t}：上寄せ}{\opt{c}：中央（既定）}{\opt{b}：下寄せ}
+  \caption{領域の中での位置}
+  \label{fig:pos}
+\end{figure}
+
+\subsection{このパッケージでの寸法}\label{sec:dims}
+
+行送りには\cs{normalsize}の\cs{normalbaselineskip}を，字の枠の高さには
+\cs{normalsize}の「あ」の高さ$+$深さ（JFMの寸法）を使う．文中で\cs{small}などに
+切り替えていても，基準は本文の行のグリッドである．
+
+字の枠の高さは，JFMによって異なる．upLaTeX，LuaTeX-ja（\pkg{jlreq}を含む）の
+標準のJFMでは全角幅と同じ（正方形の字の枠）で，JLREQの定義と一致する．pLaTeXの
+標準のJFM（\texttt{jis}）では全角幅の0.952倍である．このパッケージはJFMの字の枠に従うので，
+pLaTeXでは領域がJLREQの定義より全角幅の0.048倍だけ短くなる．
+
+\subsection{行送りの基準点と\cs{baselineskip}}\label{sec:pitch}
+
+JLREQ（\S2.4.2の注）は，行送りを「隣接する行同士の基準点から基準点までの距離」と
+しているが，基準点そのものは定めていない．基準点は処理系により異なるとしたうえで，
+横組では字の枠の天地中央とする例が多いと述べているが，その根拠は示されていない．
+また，\LaTeX{}（\TeX{}）は行をベースラインで並べるので，天地中央を基準点とする
+考え方とは大きく異なる．
+
+そこでこのマニュアルでは，行送りの基準点を仮にベースラインとする．\LaTeX{}の
+既定の動作も，このパッケージの実装も，ベースラインを基準にしているからである．つまり，
+行送りはベースラインどうしの間隔である．
+
+\LaTeX{}の\cs{baselineskip}は，隣接する行のベースラインの間隔である．\TeX{}は，前の行の
+深さと次の行の高さから，ベースラインの間隔が\cs{baselineskip}になるように行の間に
+グルーを入れる．ただし，行の間が\cs{lineskiplimit}より狭くなるときは代わりに
+\cs{lineskip}を入れるので，間隔は\cs{baselineskip}より広がる．
+
+このパッケージは，本文の行送り$b$として\cs{normalsize}の\cs{normalbaselineskip}を使い
+（\cs{linespread}で変えた場合も反映される），ベースラインが$b$の間隔で並ぶ位置を
+本文の行の位置（行のグリッド）とみなす．各行の字の枠は，ベースラインから上に
+「あ」の高さ$h$，下に深さ$d$の範囲である．したがって$n$行取りの領域は，1行目の
+ベースラインの$h$上から$n$行目のベースラインの$d$下までで，大きさは$(n-1)b+h+d$である．
+領域は，1行目のベースラインが直前の行のベースラインから$b$の位置に来るように置き，
+領域の後の行のベースラインが$n$行目のベースラインから$b$の位置に来るようにする
+（\ref{sec:place}\nobreak 節）．ディスプレイ数式も，式の1行目と最後の行のベースラインの中点を，
+領域の1行目と最後の行のベースラインの中点に合わせて置く（\ref{sec:math}\nobreak 節）．
+
+同じ大きさの文字だけが並ぶ行どうしでは，基準点をどこにとっても行送りの値は
+変わらない．JLREQの関係（行送り$=$文字サイズ$+$行間）も，領域の大きさの式も，
+基準点によらない．基準点の違いが効くのは，大きな見出しのように文字の大きさが違う
+行を含むときで，ベースラインの間隔と天地中央の間隔は一致しなくなる．
+このパッケージは，そうした見出しなどを行取りの領域に収め，前後の本文の行を
+ベースラインで行のグリッドにそろえる．
+
+また，このパッケージの行間（行送り$-$字の枠の高さ）は，字の枠が正方形のJFMでは
+JLREQの行間（行送り$-$文字サイズ）と一致する．pLaTeXの標準のJFMでは字の枠の高さが
+全角幅の0.952倍なので，JLREQの行間より全角幅の0.048倍だけ大きくなる．
+
+\section{動作環境とインストール}
+
 \begin{itemize}
-\item \env{gyoudori}環境と\cs{gyoudoriarea}命令：指定した行数で行ドリする．
-\item ディスプレイ数式の自動行ドリ（\opt{displaymath}オプション）：\env{eqnarray}，
-  \env{align}，\env{gather}を，収まる最少の行数で行ドリする．
-\item フロートの行ドリ（\opt{float}オプション）：図表を，収まる最少の行数の領域に
-  置き，前後の本文の行送りをずらさない．
-\end{itemize}
-
-\section{動作環境}
-
-\begin{itemize}
-\item pLaTeX，upLaTeX，またはLuaLaTeX＋LuaTeX-ja（\pkg{ltjsarticle}，\pkg{jlreq}
-  など）．
+\item pLaTeX，upLaTeX，またはLuaLaTeX$+$LuaTeX-ja（\pkg{ltjsarticle}，\pkg{jlreq}など）．
+  横組のみを対象とする．
 \item \LaTeX{} 2020-10-01以降（環境フック\cs{AddToHook}を使う）．
 \item \pkg{kvoptions}パッケージ．
 \end{itemize}
-横組のみを対象としています．
 
-\section{インストール}
-
-\texttt{gyoudori.sty}（リポジトリの\texttt{tex/latex/gyoudori/}にある）を
-TEXMFツリーに置きます．
-このリポジトリ自体をTEXMFHOMEとして使うこともできます．
+\texttt{gyoudori.sty}をTEXMFツリー（例えば\texttt{tex/latex/gyoudori/}）に置く．
 
 \section{使い方}
 
-\subsection{行ドリの領域}
-
-$n$行ドリの領域は，本文の$n$行分の字面の範囲です．1行目の字面の上端から，$n$行目の
-字面の下端までを領域とします．高さは次のとおりです．
-\[
-  (n-1)\times\text{行送り} + \text{「阿」の高さ} + \text{「阿」の深さ}
-\]
-行送りは\cs{normalbaselineskip}，字面の高さと深さは「阿」の寸法で，いずれも
-\cs{normalsize}のものを使います．文中で\cs{small}などに切り替えていても，基準は
-本文（\cs{normalsize}）の行のグリッドです．
-
-\subsection{\env{gyoudori}環境}
+\subsection{\env{gyoudori}環境}\label{sec:env}
 
 \begin{verbatim}
 \begin{gyoudori}[<位置>]{<行数>}
 <内容>
 \end{gyoudori}
 \end{verbatim}
-\meta{内容}を\meta{行数}行ドリします．\meta{位置}は領域の中での配置で，
-\opt{t}（上寄せ），\opt{c}（中央．既定），\opt{b}（下寄せ）のいずれかです．
-それ以外を指定するとエラーになります．
-
-\meta{内容}は垂直モードで組まれるので，複数行や文字サイズの変更を含められます．
+\meta{内容}を\meta{行数}行取りする．\meta{位置}は\opt{t}（上寄せ），\opt{c}（中央．
+既定），\opt{b}（下寄せ）のいずれかである．\meta{内容}は垂直モードで組まれるので，
+複数行や文字サイズの変更を含められる．
 
 \begin{demo}
-本文の行です．前の段落の最後の行です．
+本文の行である．前の段落の最後の行である．
 \begin{gyoudori}{3}
-\large 3行ドリの見出し（中央）
+\large 3行取り中央の見出し
 \end{gyoudori}
 
-本文の行です．見出しの後の段落も，行送りの位置からずれません．
+本文の行である．見出しの後の段落も，行の位置からずれない．
 \begin{gyoudori}[b]{2}
-2行ドリの見出し（下寄せ）
+2行取り下寄せの見出し
 \end{gyoudori}
-空行を置かずに続けた本文は，字下げされません．
+空行を置かずに続けた本文は，字下げされない．
 \end{demo}
 
-\verb|\end{gyoudori}|の直後に空行がなければ，後続の文は字下げせず，\cs{parskip}も
-入れません（ディスプレイ数式の後と同じ扱い）．空行があれば通常の段落になります．
+\begin{itemize}
+\item \verb|\end{gyoudori}|の直後に空行がなければ，後続の文は字下げせず，\cs{parskip}も
+  入れない（ディスプレイ数式の後と同じ扱い）．空行があれば，新しい段落として字下げし，\cs{parskip}も入れる．
+\item 領域は分割されない．ページ（段）の末尾に領域が入りきらなければ，見出し全体が
+  次のページ（段）の先頭に送られる（JLREQ \S4.1.7のa，c）．
+\item 見出しの直後では改ページ・改段しない．見出しの後ろに本文の行が1行も入らない
+  ときは，見出し全体が次のページ（段）の先頭に送られる（JLREQ \S4.1.7のb）．
+  いずれの場合も，前のページ（段）の末尾は空いたままになる．
+\end{itemize}
 
 \subsection{\cs{gyoudoriarea}命令}
 
 \begin{verbatim}
 \gyoudoriarea[<位置>]{<行数>}{<内容>}
 \end{verbatim}
-\env{gyoudori}環境と同じく，\meta{内容}を\meta{行数}行ドリします．命令なので，直後の
-字下げの制御はありません．後続の段落は通常どおり字下げされます．
+\env{gyoudori}環境と同じく行取りする．命令なので，直後の字下げの制御はない．
+
+\subsection{JLREQの配置方法との対応}\label{sec:pos}
+
+JLREQ \S4.1.6は，行取りによる別行見出しの配置方法としてaからdをあげている．
+このパッケージでは次のように書ける．
+\begin{description}
+\item[a　複数行の領域の中央] \verb|\begin{gyoudori}{3}|（3行取り中央）．
+\item[b　中央に置き，前後に行単位の空きをとる] 行送りの整数倍の空きを組みあわせる．
+  例えば前を1行アキにするなら，\verb|\vspace{\baselineskip}|の後に
+  \env{gyoudori}環境を置く．
+\item[c　領域の中の指定位置] 上寄せ（\opt{t}）と下寄せ（\opt{b}）を用意している．
+  それ以外の位置は，\meta{内容}の中に空きを入れて調整する．
+\item[d　1行の見出しを行の位置に置き，前を1行アキ] 本文と同じ大きさの見出しを
+  2行取り下寄せ（位置\opt{b}，行数2）にすると，同じ配置になる．
+\end{description}
+\paragraph{見出しとしての行取りがページの先頭に来たとき}
+見出しの行取りの領域も，ページ（段）の先頭では版面の天につき，領域の中の位置は位置の
+指定に従う（\ref{sec:edge}\nobreak 節）．例えばdの「前を1行アキにした小見出し」（2行取り
+下寄せ）がページの先頭に来ると，1行目が空き，見出しは2行目に来る．これはJLREQ
+\S4.1.8の「常に1行アキにする」方針にあたる．
+
+\subsection{ページの先頭・末尾での行取りの領域}\label{sec:edge}
+
+見出しに限らず，\env{gyoudori}環境，\cs{gyoudoriarea}，ディスプレイ数式の行取りの
+領域は，ページ送りの都合で偶然ページ（段）の先頭や末尾に来ることがある．そのときの
+挙動は次のとおりである．フロートの置き場所は\LaTeX{}が決めるので，ここでは扱わない
+（\ref{sec:float}\nobreak 節）．
+
+\paragraph{行取りの領域がページの先頭に来たとき}
+領域そのものが版面の天につき（天ツキ），領域の前には行間が入らない．領域の中の位置は，
+ページの途中と同じく位置の指定（\opt{t}，\opt{c}，\opt{b}）に従う（図\nobreak\ref{fig:top}）．
+$n$行取りの次の行は，$n+1$行目から始まる．ディスプレイ数式も同じで，数式は領域の
+中でページの途中と同じ位置に置かれる．
+
+\begin{figure}[htbp]
+  \centering
+  \GyFigTop{見出し}{ページの途中\\（\opt{c}）}{ページの先頭\\（\opt{t}）}%
+    {ページの先頭\\（\opt{c}）}{ページの先頭\\（\opt{b}）}{版面の天}
+  \caption{3行取りの領域がページの途中と先頭に来たとき（左の数字は行番号）}
+  \label{fig:top}
+\end{figure}
+
+\paragraph{行取りの領域がページの末尾に来たとき}
+領域は分割しない．領域が版面の最終行までに収まればそのページに置き，収まらなければ
+領域全体を次のページ（段）の先頭に送る．このとき前のページ（段）の末尾は，入らなかった
+行数だけ空いたままになる．
+\begin{itemize}
+\item \env{gyoudori}環境と\cs{gyoudoriarea}は，見出しとして使うことを想定して，直後では
+  改ページしない．領域が最終行で終わり，後ろに本文の行が1行も入らないときも，領域全体を
+  次のページ（段）に送る（\ref{sec:env}\nobreak 節）．
+\item ディスプレイ数式の後では改ページしてよい．領域が最終行で終わればそのページに
+  収まり，続く本文は次のページ（段）の1行目から始まる．複数行の数式も1つの領域なので，
+  \cs{allowdisplaybreaks}を指定しても途中で改ページしない．
+\end{itemize}
 
 \section{パッケージオプション}
 
-オプションはkey-value形式で指定します．
-
+オプションはkey-value形式で指定する．真偽値のオプションは，キーだけを書くと
+\opt{true}になる．
 \begin{verbatim}
-\usepackage[displaymath=true,float=true,textfloatsep=2\baselineskip]{gyoudori}
+\usepackage[displaymath,float,textfloatsep=2\baselineskip]{gyoudori}
 \end{verbatim}
-
-真偽値のオプションは，\opt{displaymath}のようにキーだけを書くと\opt{true}になります．
 
 \subsection{\opt{displaymath=true|false}}
 
-ディスプレイ数式を自動的に行ドリします．既定は\opt{false}です．
-
-対象は\env{eqnarray}，\env{eqnarray*}，\env{align}，\env{align*}，\env{gather}，
-\env{gather*}です（\env{align}と\env{gather}は\pkg{amsmath}が必要）．数式全体が
-収まる最少の行数（2行以上）で行ドリし，領域の中央に置きます．数式の前後の
-\cs{abovedisplayskip}などのアキは使いません．式番号，\cs{label}，\cs{eqref}は
-ふだんどおり使えます．
+ディスプレイ数式を自動的に行取りする．既定は\opt{false}である．
+対象は\env{eqnarray}，\env{align}，\env{gather}と，それぞれの\env{*}つきである
+（\env{align}と\env{gather}は\pkg{amsmath}が必要）．数式は，その1行目と最後の行の
+ベースラインの中点を，領域の1行目と最後の行のベースラインの中点に合わせて置く．
+1行の式を奇数行取りにすると，式のベースラインが中央の行のベースラインにのる．
+行数は，この位置で数式が収まる最少の行数（2行以上）である．数式は領域の外側の行間に
+半分まではみ出してよく，隣の行の字の枠との間には行間の半分以上が空く．
+数式の前後の\cs{abovedisplayskip}などは使わない．式番号，\cs{label}，\cs{eqref}は
+このオプションを使わないときと同じように使える．
 
 \begin{demo}
-本文の行です．次の式は行ドリされます．
+\GyBands{8}本文の行である．次の式は行取りされる．
 \begin{align}
   a &= b + c \\
   d &= e
 \end{align}
-式の後の本文も行送りの位置に来ます．
+式の後の本文も行の位置に来る．
 \begin{gather*}
   x = y
 \end{gather*}
-本文の行です．
+本文の行である．
 \end{demo}
 
-\pkg{amsmath}の\env{align}と\env{gather}は各行に\cs{strut}を入れるので，2行の
-\env{align}は高さが2行送りになり，3行ドリになります．
+グレーの帯は行の位置（各行の字の枠）を示す．この例では，\env{align}は3行取り，
+\env{gather*}は2行取りの領域の中央に置かれ，その前後の本文はどれも帯の上に来て
+いる．\pkg{amsmath}の\env{align}と\env{gather}は各行に\cs{strut}を入れるので，
+2行の\env{align}が何行取りになるかは，クラスの行送りによって変わる（この
+マニュアルの\pkg{jlreq}では3行取り，\pkg{jsarticle}では2行取り）．
 
-\subsection{\opt{float=true|false}}
+分数や積分，総和を含む大きな数式も，収まる最少の行数で行取りされる．
 
-フロートを行ドリで配置します．既定は\opt{false}です．
+\begin{demo}
+\GyBands{13}本文の行である．積分と総和の式である．
+\begin{gather}
+  \int_0^1 f(x)\,dx = \sum_{k=1}^{n} \frac{a_k}{k!}
+\end{gather}
+式の後の本文である．次は2行の式である．
+\begin{align}
+  S_n &= \sum_{k=1}^{n} k = \frac{n(n+1)}{2} \\
+  I &= \int_{-\infty}^{\infty} e^{-x^2}\,dx = \sqrt{\pi}
+\end{align}
+続く本文である．場合分けの式である．
+\begin{gather}
+  f(x) =
+  \begin{cases}
+    \frac{x^2}{2} & (x \ge 0) \\
+    -x & (x < 0)
+  \end{cases}
+\end{gather}
+最後の本文の行である．
+\end{demo}
 
+この例では，上から2行取り，4行取り，3行取りになっている．どの場合も，次の本文は帯の上から始まる．
+
+\subsection{\opt{float=true|false}}\label{sec:float}
+
+フロートを行取りで配置する．既定は\opt{false}である．
 \begin{itemize}
-\item フロートは，それが収まる最少の行数（1行以上）の行ドリ領域の大きさにします．
-\item 置き場所が決まったら，領域の中での位置を次のように決めます．
-  \begin{itemize}
-  \item 上に置かれたとき：上寄せ（\opt{t}）．領域の上端を本文1行目の字面の上端に
-    そろえる．
-  \item 下に置かれたとき：下寄せ（\opt{b}）．領域の下端を本文の行の字面の下端に
-    そろえる．
-  \item ここ（\opt{h}）に置かれたとき：中央．前後の本文の行の字面にそろえる．
-  \end{itemize}
-\item フロートまわりのアキ（\cs{floatsep}など5つ．次節を参照）は，
-  「行間＋行送りの整数倍」のうち，
-  指定値以上で最小の値に丸め，伸縮をなくします．行間は，行送り$-$「阿」の高さ
-  $-$「阿」の深さです．\cs{intextsep}はフロートの上下に入るので，行間を半分ずつ
-  割り振った値になります．
+\item フロートは，それが収まる最少の行数（1行以上）の行取りの領域の大きさにする．
+\item 置き場所が決まったら，領域の中での位置を次のようにする．上に置かれたときは
+  上寄せで，領域の上端を本文1行目の字の枠の上端にそろえる．下に置かれたときは
+  下寄せで，領域の下端を本文の行の字の枠の下端にそろえる．ここ（\opt{h}）に
+  置かれたときは中央で，前後の本文の行にそろえる．
+\item フロートまわりの5つのアキ（\cs{floatsep}など．次節）は，
+  「行間$+$行送りの整数倍」のうち
+  指定値以上で最小の値に丸め，伸縮をなくす．\cs{intextsep}はフロートの上下に
+  入るので，行間を半分ずつ割り振った値になる．
 \end{itemize}
-これにより，フロートの前後で本文の行送りはずれません．
-
-\LaTeX{}は\opt{[h]}だけの指定を\opt{[ht]}に変えます．その場に置けずに上に回った
-フロートは，上寄せで組み直されます．ここのフロートの直前では改段しません（段の
-先頭に来ると，前のアキが捨てられて位置がずれるため）．
+これにより，フロートの前後で本文の行は行の位置からずれない．
+\LaTeX{}は\opt{[h]}だけの指定を\opt{[ht]}に変える．その場に置けずに上に回った
+フロートは上寄せで組み直される．ここのフロートの直前では改段しない．
 
 \subsection{\opt{floatsep}，\opt{textfloatsep}，\opt{intextsep}，
   \opt{dblfloatsep}，\opt{dbltextfloatsep}}
 
-同名の長さを設定します．指定しなければ，クラスファイルの値を使います．
-\opt{float=true}のときは，これらの値をもとに上記の丸めを行います．
-\opt{float=false}のときは，指定した値がそのまま入ります．
+同名の長さを設定する．指定しなければ，クラスファイルの値を使う．
+\opt{float=true}のときは，この値をもとに上記の丸めを行う．
 
-\section{他のパッケージとの併用}
+\section{ほかのパッケージとの併用}
 
-以下は\opt{float=true}のときの動作です．
-
+以下は\opt{float=true}のときの動作である．
 \begin{description}
-\item[\pkg{nidanfloat}] 段抜きのフロート（\env{figure*}）は，上に置かれれば版面の
-  上端に，下に置かれれば版面に入る最終行の字面の下端にそろえます．2段組の段ごとの
-  下のフロートは，段に入る最終行の字面の下端にそろえます．\pkg{nidanfloat}の前後
-  どちらで読み込んでもかまいません．
-\item[\pkg{stfloats}] 段抜きのフロートの上と下を，\pkg{nidanfloat}と同じように
-  そろえます．
-\item[\pkg{flushend}] 最終ページで揃えた段の中のグルーを伸縮させず，行を行送りの
-  位置に保ちます．そのため\opt{spread}，\opt{shrink}系のオプションは効きません．
-  左右の段のつなぎ目の間隔は，行送りの整数倍に切り上げます．
-\item[\pkg{evenend}] （LuaLaTeX）最終ページで揃えた段のフロートを，上なら上寄せ，
-  下なら下寄せにそろえます．
+\item[\pkg{nidanfloat}] 段抜きのフロート（\env{figure*}）は，上なら版面の上端に，
+  下なら版面に入る最終行の字の枠の下端にそろえる．2段組の段ごとの下のフロートは，
+  段に入る最終行の字の枠の下端にそろえる．読み込み順は問わない．
+\item[\pkg{stfloats}] 段抜きのフロートの上と下を同じようにそろえる．
+\item[\pkg{flushend}] 最終ページでそろえた段の中のグルーを伸縮させず，行を行の位置に
+  保つ．\opt{spread}，\opt{shrink}系のオプションは効かない．左右の段のつなぎ目の
+  間隔は行送りの整数倍に切り上げる．
+\item[\pkg{evenend}] （LuaLaTeX）最終ページでそろえた段のフロートを，上なら上寄せ，
+  下なら下寄せにそろえる．
 \end{description}
 
-\section{しくみ}
+\section{JLREQとの関係}
 
-行ドリする内容は，行ドリ領域の高さの\cs{vbox}に組みます．この箱の高さを
-「阿」の高さに，深さを残りすべてに付け替え，\cs{baselineskip}で置きます．そのうえで
-\cs{prevdepth}を「阿」の深さにします．こうすると，領域の1行目のベースラインと，
-次の行のベースラインがともに行送りの位置に来ます（阿部紀行氏の方法による．
-\url{https://abenori.blogspot.com/2017/12/gyodori.html}）．
+JLREQの行取りに関する記述と，このパッケージの動作を照合した．
 
-ディスプレイ数式は，環境の外側で開いたボックスに組んで大きさを測り，同じ方法で
-置きます．フロートは，出力ルーチンの\cs{@cflt}，\cs{@cflb}，\cs{@addtocurcol}
-などの前に処理を足し，置き場所に応じて箱の中身の位置を組み直します．箱の外形
-（高さと深さ）は変えないので，\LaTeX{}のフロート配置の計算には影響しません．
+\begin{description}
+\item[行送りの基準点（\S2.4.2の注）] JLREQは基準点を定めていない．このパッケージは
+  ベースラインを基準点とする（\ref{sec:pitch}\nobreak 節）．
+\item[領域の大きさ（\S2.5.2，\S4.1.6）] 一致する．字の枠にはJFMの寸法を使うので，
+  pLaTeXの標準のJFMでは，正方形の字の枠を前提にした定義より全角幅の0.048倍だけ
+  短くなる（\ref{sec:dims}\nobreak 節）．
+\item[領域の中の配置（\S4.1.6のaからd）] aは既定の中央で，cは上寄せ・下寄せで
+  対応する．bとdは組みあわせで実現する（\ref{sec:pos}\nobreak 節）．
+\item[ページ末・段末の見出し（\S4.1.7）] 一致する．領域が入りきらないときと，
+  見出しの後ろに本文の行が1行も入らないときは，見出し全体を次のページ（段）の先頭に
+  送る．縦組の偶数ページの例外は，横組のみが対象なので扱わない．
+\item[ページ先頭の見出し（\S4.1.6，\S4.1.8）] 一致する．領域は版面の天につき，
+  その後ろにだけ行間が加わる（\S4.1.6）．前を1行アキにした小見出しでは，
+  \S4.1.8の3つの方針のうち「常に1行アキにする」にあたる（\ref{sec:pos}\nobreak 節）．
+\item[段の末尾の空き（\S4.1.7のc）] JLREQは，段末を空けないための何らかの処理を
+  望ましいとしつつ，やむを得ない場合は空けてよいとしている．このパッケージは
+  空けたままにする．
+\item[別行の数式（\S4.1.6のNote）] JLREQは，文字サイズより大きい別行の数式について，
+  行取りで指定する方法と，前後に最低の行間をとって半端を版面の中で調整する方法を
+  あげている．\opt{displaymath}は前者である．最少2行とするのはこのパッケージの
+  設計である．
+\item[図版（\S2.5.2，\S4.3）] JLREQは，図版などの行送り方向の占める領域も基本版面の
+  行の位置にそろえるべきだとしている．\opt{float}はこれに従う．図版の前後に
+  本文が1行だけ来る配置を避けること（\S4.3）は，\LaTeX{}のフロート配置に任せて
+  おり，扱わない．
+\end{description}
+
+\section{仕組み}
+
+\subsection{記号}
+
+$b$：行送り（\cs{normalsize}の\cs{normalbaselineskip}），
+$h$，$d$：\cs{normalsize}の「あ」の高さと深さ（字の枠），
+$g=b-h-d$：行間，
+$A(n)=(n-1)b+h+d$：$n$行取りの領域の高さ．
+
+\subsection{行取りの領域の置き方}\label{sec:place}
+
+内容を高さ$A(n)$の\cs{vbox}に組み，位置に応じて\cs{vss}を前後に置く
+（\opt{t}は後ろ，\opt{c}は前後，\opt{b}は前）．この箱の高さを$h$に，深さを
+$A(n)-h$につけ替え，段落を閉じてから置く．\TeX{}は直前の行のベースラインから$b$の
+位置に箱のベースライン（領域の1行目のベースライン）が来るように\cs{baselineskip}の
+グルーを入れる．置いた後に\cs{prevdepth}を$d$にするので，次の行は領域の最後の行の
+ベースラインから$b$の位置，つまり$n+1$行目に来る．ページ（段）の先頭では，
+\cs{topskip}によって領域の上端が1行目の字の枠の上端につく．この置き方は
+阿部紀行氏の方法による（\url{https://abenori.blogspot.com/2017/12/gyodori.html}）．
+
+\env{gyoudori}環境と\cs{gyoudoriarea}は，置いた直後に\cs{nobreak}を入れて，見出しの
+直後での改ページを禁じる．\env{gyoudori}環境と数式の環境の後では，\LaTeX{}の
+\cs{@doendpe}と同じ仕組みで，空行がなければ次の段落を字下げせず，\cs{parskip}も0に
+する．
+
+\subsection{ディスプレイ数式}\label{sec:math}
+
+\begin{enumerate}
+\item 環境フック（\texttt{env/<環境名>/before}と\texttt{after}）で，環境の外側に
+  \cs{vbox}を開き，その中で\cs{abovedisplayskip}などを0にして数式を組む．
+\item この箱の先頭に\cs{penalty}$-10000$を置いておく．組み終えた箱の複製を，
+  \cs{splittopskip}を十分大きな値$S$にして\cs{vsplit}すると，残りの先頭に
+  「$S-{}$1行目の高さ」のグルーが入る．そこで「残りの高さ$-S$」が，数式の
+  1行目と最後の行のベースラインの距離$\Delta$になる．
+\item 数式の箱の高さを$H$，深さを$D$とすると，最後の行のベースラインは箱の上端から
+  $H$，1行目は$H-\Delta$の位置にある．領域の上端から箱の上端までの距離を
+  \[ y = h + \frac{(n-1)b}{2} - H + \frac{\Delta}{2} \]
+  とすると，数式のベースラインの中点が領域のベースラインの中点にそろう．
+\item $n=2$から順に増やし，$-g/2\le y$かつ$y+H+D\le A(n)+g/2$となる最小の$n$を
+  使う（箱は領域の外側の行間に半分まではみ出してよい）．
+\item 箱を領域の中で$y$だけ下げて，\ref{sec:place}\nobreak 節と同じ方法で置く．
+\end{enumerate}
+
+\subsection{フロート}
+
+\begin{description}
+\item[大きさ] \cs{@endfloatbox}の後で，フロートの箱を，高さ$+$深さ$\le A(n)$となる
+  最小の$n$（1以上）の高さ$A(n)$の\cs{vbox}に組み直す（中身は上寄せ）．
+\item[組み直し] 置き場所が決まったら，箱の外形（高さと深さ）を保ったまま，中身を
+  位置$p$（\opt{t}，\opt{c}，\opt{b}）に置き直し，さらに$\delta$だけ下げる．
+  外形を変えないので\LaTeX{}のフロート配置の計算は変わらず，段抜きフロートの印
+  （深さ1\,sp）も保たれる．
+\item[上のフロート（\cs{@cflt}）] $p=\opt{t}$，$\delta=\cs{topskip}-h$．領域の上端が
+  本文1行目の字の枠の上端に来る．
+\item[下のフロート（\cs{@cflb}）] $p=\opt{b}$，$\delta=d-d_{\mathrm{last}}$．
+  $d_{\mathrm{last}}$は段の最後の箱の深さを$b$で割った余りである（最後の箱が行取りの
+  領域なら$d$になる）．フロートの並びの末尾には，高さ0・深さ$d$の空の行と，
+  「$r-d$」のグルーを置く．$r$は「段の高さ$-\cs{topskip}$」を$b$で割った余りである．
+  こうすると，\cs{clearpage}の\cs{vfil}で押し下げられたときも並びの下端が段に入る
+  最終行の字の枠の下端にそろい，字の枠の下端が版面からはみ出すクラスでも
+  Overfullにならない．押し下げられた場合（段の末尾がグルー）は$\delta=0$とし，
+  \cs{@textbottom}の伸びを打ち消す．
+\item[ここのフロート（\cs{@addtocurcol}）] $p=\opt{c}$，
+  $\delta=g/2+d-d_{\mathrm{prev}}$．$d_{\mathrm{prev}}$は直前の行の深さを$b$で割った
+  余りである．フロートの直前には\cs{nobreak}を入れさせ，段の先頭に来ないようにする．
+\item[アキの丸め] 各アキを，$g+kb$（$k$は0以上の整数）のうち指定値以上で最小の値に
+  し，伸縮をなくす．\cs{intextsep}はフロートの上下に入るので$g/2+kb$とする．
+  こうすると「フロートの領域$+$アキ」が行送りの整数倍になり，本文の行がずれない．
+\item[脚注の積み順] pLaTeXの\cs{@makecol}はフロートの後に脚注を積むので，$r$を
+  求めるときに脚注の高さを段の高さから引く．\LaTeX{} 2025-06-01以降の
+  \cs{@makecol}（LuaLaTeXなど）は脚注の後にフロートを積むので，下のフロートがある
+  段では脚注の前に\cs{vfil}を入れ，脚注と下のフロートを版面の下端に置く．
+\end{description}
+
+\subsection{ほかのパッケージとの接続}
+
+\begin{description}
+\item[段抜きのフロート（\cs{@comdblflelt}）] \cs{@dbltoplist}にあれば上の並びで，
+  $p=\opt{t}$，$\delta=\cs{topskip}-h$である．なければ下の並び（\pkg{nidanfloat}，
+  \pkg{stfloats}）で，$p=\opt{b}$，$\delta=d-r$（$r$は「$\cs{textheight}-\cs{topskip}$」
+  を$b$で割った余り）とし，並びの先頭に\cs{vfil}を置く．
+\item[\pkg{nidanfloat}] 段ごとの上のフロートは\cs{@cflt}と同じである．下のフロートは
+  \cs{L@cflb}，\cs{R@cflb}を置き換え，並びを段に入る最終行の字の枠の下端にそろえ，
+  伸びは本文とフロートの間に置く．
+\item[\pkg{flushend}] 最終ページの段を組み上げた後，段の中のグルーを伸縮させずに
+  組み直す（末尾にfill次のグルー）．左右の段のつなぎ目（\cs{atColsBreak}）では，
+  左段の最後の要素のベースラインから右段の最初の要素のベースラインまでを，$b$の
+  整数倍に切り上げる．フロートの箱では，中身のずらし量$\delta$も考慮する．
+\item[\pkg{evenend}] 最終ページの段内フロートの複製をとる前に，上のフロートを
+  \opt{t}に，下のフロートを\opt{b}に組み直す．
+\end{description}
 
 \section{制限事項}
 
 \begin{itemize}
-\item 行のグリッドは\cs{normalsize}の行送りが基準です．\cs{small}などの中では，
-  周りの行と行送りが合いません．
-\item 箇条書きの\cs{topsep}，\cs{itemsep}，\cs{parsep}は行送りの整数倍では
-  ないので，箇条書きの中や前後では行送りの位置がずれます．
-\item フロートだけのページや段（文書末尾で吐き出されるものなど）は対象外です．
-\item \cs{flushbottom}の文書，\pkg{float}パッケージの\opt{[H]}との組み合わせは
-  試していません．
+\item 行のグリッドは\cs{normalsize}の行送りが基準である．\cs{small}などのなかでは，まわりの
+  行とあわない．
+\item 箇条書きの\cs{topsep}，\cs{itemsep}，\cs{parsep}は行送りの整数倍ではないので，
+  箇条書きの中や前後では行の位置がずれる．
+\item フロートだけのページや段は対象外である．
+\item 縦組は対象外である．\cs{flushbottom}の文書，\pkg{float}パッケージの\opt{[H]}との
+  組みあわせは試していない．
 \item \pkg{flushend}と脚注と，最終ページの下のフロートまたはここのフロートが
-  重なると，本文が1\,pt前後ずれることがあります．
-\item \pkg{flushend}の\opt{checkfloat}オプションで，最終ページの右段がフロート
-  だけの段になると，後ろの本文がずれることがあります．
-\item \pkg{stfloats}の\cs{fnbelowfloat}は，pLaTeXでは効きません（pLaTeXは独自の
-  \cs{@makecol}を使うため）．pLaTeXでは，脚注は常に下のフロートの下に来ます．
+  重なると，本文が1\,pt前後ずれることがある．
+\item \pkg{stfloats}の\cs{fnbelowfloat}は，pLaTeXでは効かない（pLaTeXは独自の
+  \cs{@makecol}を使うため）．
+\item 版面の高さが行の位置に合っていないクラス（pLaTeXの\pkg{jarticle}など）では，
+  最終行の下に余りがあるので，ディスプレイ数式の行取りの領域が最終行より下に1行まで
+  はみ出すことがある．\env{gyoudori}環境と\cs{gyoudoriarea}は，直後で改ページしない
+  ので，はみ出さずに次のページ（段）に送られる．
+\item 既知の未対応事項：\pkg{nidanfloat}と\opt{displaymath}を一緒に使うと，本文の行が
+  行の位置からずれることがある．\pkg{nidanfloat}が左段からあふれた本文を右段に
+  つなぐ処理と，行取りの領域の箱の大きな深さが干渉しているとみている．
+\end{itemize}
+
+\section{参考文献}
+
+\begin{itemize}
+\item W3C, \textit{Requirements for Japanese Text Layout}（日本語組版処理の要件），
+  \url{https://www.w3.org/TR/jlreq/}
+\item 阿部紀行「行取り」，\url{https://abenori.blogspot.com/2017/12/gyodori.html}
 \end{itemize}
 
 \section{ライセンス}
 
-MITライセンスです．
+MITライセンスである．
 
 \end{document}

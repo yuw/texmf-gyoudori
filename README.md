@@ -1,116 +1,91 @@
-# Gyou-dori
+# gyoudori — gyou-dori (line-based placement) for Japanese typesetting
 
-## Author
+- Author: Yuwsuke Kieda
+- Version: v20261016.0 (2026-10-16)
+- License: MIT
+- Repository: https://github.com/yuw/texmf-gyoudori
 
-Yuwsuke Kieda
+## What is gyou-dori?
 
-## Date
+*Gyou-dori* (行取り, also written 行ドリ) is one of the arbitrary layouts: the
+block-direction space of an element whose size differs from the main text, such
+as a heading, is determined as a number of lines of the kihon-hanmen (the basic
+page format), so that the following lines of the main text stay on the line
+positions of the kihon-hanmen (the line grid). It is used in typesetting
+Japanese books and the like when such a line grid is specified.
+The area of an 𝑛-line gyou-dori is
 
-2020-07-31
+    character frame × 𝑛 + line gap × (𝑛 − 1)
+      = line pitch × (𝑛 − 1) + character frame.
 
-## Version
+By default this package places the content at the center of the area; top or
+bottom alignment can be chosen with the position argument. Where to place the
+content depends on the specification of each job.
+See JLREQ (W3C *Requirements for Japanese Text Layout*), §2.5.2 and §4.1.6:
+https://www.w3.org/TR/jlreq/#processing_of_gyoudori
 
-0.1
+Gyou-dori is called arbitrary because aligning lines to the grid is not in
+itself a principle of readability. Such a layout is often
+specified regardless of the benefit of readers; page design should rather pursue
+that benefit without being tightly bound to the grid. This package is a tool for
+cases where one has to typeset under such a specification.
 
-## License
+## Features
 
-MIT
+- The `gyoudori` environment and the `\gyoudoriarea` command place their
+  content in an 𝑛-line gyou-dori area (top, center or bottom).
+- Option `displaymath`: display math (`eqnarray`, `align`, `gather` and their
+  starred forms) is centered by its baselines in the smallest area of at least
+  two lines (a one-row display in an odd-line area sits on the middle line).
+- Option `float`: floats are put into the smallest gyou-dori area and aligned to
+  the line grid; the float separations are rounded to whole lines.
+  Works with nidanfloat, stfloats, flushend and evenend.
 
-## Abstract
+## Requirements
 
-We offer one way of realizing the gyou-dori.
+- pLaTeX, upLaTeX, or LuaLaTeX with LuaTeX-ja (e.g. ltjsarticle, jlreq);
+  horizontal writing only
+- LaTeX 2020-10-01 or later
+- kvoptions
 
-gyou-dori >>> https://www.w3.org/TR/jlreq/#processing_of_gyoudori
+## Installation
 
-## Requirement
-
-(u)pLaTeX, or LuaLaTeX with LuaTeX-ja (e.g. ltjsarticle, jlreq);
-LaTeX 2020-10-01 or later.
-
-## Manual
-
-See `doc/gyoudori/gyoudori-ja.pdf` (in Japanese).
+Put `tex/latex/gyoudori/gyoudori.sty` into your TEXMF tree.
 
 ## Usage
 
-The following two codes have the same effect.
-
 ```tex
-\begin{gyoudori}[#1]{#2}
-#3
+\usepackage[displaymath,float]{gyoudori}
+
+\begin{gyoudori}[c]{3}  % position t|c|b (default c), number of lines
+A heading
 \end{gyoudori}
+
+\gyoudoriarea[b]{2}{A heading}
 ```
 
-```tex
-\gyoudoriarea[#1]{#2}{#3}
-```
+Package options (key-value):
 
-If no blank line follows `\end{gyoudori}`, the next paragraph is not indented
-(and no `\parskip` is inserted), as after a display math.
-The same applies to the display math environments with the `displaymath` option.
+| key | value | default | meaning |
+|---|---|---|---|
+| `displaymath` | true/false | false | gyou-dori for display math |
+| `float` | true/false | false | gyou-dori for floats |
+| `floatsep`, `textfloatsep`, `intextsep`, `dblfloatsep`, `dbltextfloatsep` | length | class value | set the length |
 
-### Arguments (option): #1
+## Documentation
 
-The heading text postions.
+- `doc/gyoudori/gyoudori-en.pdf` (English)
+- `doc/gyoudori/gyoudori-ja.pdf` (Japanese)
 
-- t: top in the area
-- c: center in the area (default)
-- b: bottom in the area
+The manuals explain gyou-dori with figures, the usage, the relation to JLREQ,
+how it works, and the limitations. Build them with `make doc`
+(pLaTeX and dvipdfmx).
 
-### Arguments: #2
+## 日本語の概要
 
-The line numbers of the area.
-
-### Arguments: #3
-
-The heading text.
-
-## Package option
-
-### displaymath=true|false
-
-Automatically apply gyou-dori to the display math environments
-`eqnarray`, `eqnarray*`, `align`, `align*`, `gather` and `gather*`
-(`align` and `gather` require amsmath).
-Each display is centered in the smallest area of at least 2 lines that holds it.
-The default is `false`.
-
-```tex
-\usepackage[displaymath=true]{gyoudori}
-```
-
-### float=true|false
-
-Place floats on the line grid.
-Each float is put in the smallest gyou-dori area (at least 1 line) that holds it,
-and aligned to the top (`t`) when placed at the top of a page,
-to the bottom (`b`) when placed at the bottom,
-and centered when placed here (`h`).
-The separations below are rounded up to
-"the interline gap + a multiple of the baselineskip" without stretch or shrink,
-so that the text lines around floats stay on the grid.
-Float-only pages are not handled.
-With the nidanfloat or stfloats package, double-column floats (`figure*`) are aligned
-to the top of the page (`t`) or to the last line of the page (`b`),
-and single-column bottom floats in two-column mode are aligned to the last line
-of the column.
-With the flushend package, the balanced columns of the last page keep the line grid:
-the glue in the columns is not stretched or shrunk
-(so the `spread`/`shrink` options have no effect),
-and the gap where the two columns are joined is rounded up to the line grid.
-With the evenend package (LuaLaTeX), floats on the balanced last page are aligned
-to the top (`t`) or bottom (`b`) of the column.
-The default is `false`.
-
-### floatsep, textfloatsep, intextsep, dblfloatsep, dbltextfloatsep
-
-Set the corresponding lengths.
-If not given, the values of the document class are used.
-
-```tex
-\usepackage[float=true,textfloatsep=2\baselineskip,intextsep=10pt]{gyoudori}
-```
-
-## Repository
-
-https://github.com/yuw/texmf-gyoudori
+`gyoudori`は，見出し・ディスプレイ数式・フロートを行取り（行ドリ）で配置し，
+前後の本文の行を基本版面の行位置からずらさないためのパッケージである．
+𝑛行取りの領域は「字の枠の高さ × 𝑛 + 行間 × (𝑛 − 1)」で，このパッケージは
+既定で内容を領域の中央に置き，位置の指定で上寄せ・下寄せにもできる（領域の定義は
+JLREQ §4.1.6）．pLaTeX，upLaTeX，LuaLaTeX（LuaTeX-ja）で動く．
+詳しくは日本語のマニュアル`doc/gyoudori/gyoudori-ja.pdf`を参照のこと．

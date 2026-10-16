@@ -1,6 +1,6 @@
 \NeedsTeXFormat{LaTeX2e}[2020/10/01]
 \ProvidesPackage{gyoudori}
-   [2026/09/25 v20260925.0 style file ``gyoudori.sty''^^J
+   [2026/10/16 v20261016.0 style file ``gyoudori.sty''^^J
     by Yuwsuke Kieda]
 
 % pLaTeX/upLaTeXとLuaLaTeX（LuaTeX-ja）で動く．
@@ -10,9 +10,9 @@
 
 \RequirePackage{kvoptions}
 \SetupKeyvalOptions{family=gyoudori,prefix=gyoudori@}
-% displaymath=true|false: ディスプレイ数式環境を自動的に行ドリする（既定はfalse）
+% displaymath=true|false: ディスプレイ数式環境を自動的に行取りする（既定はfalse）
 \DeclareBoolOption[false]{displaymath}
-% float=true|false: フロートを行ドリで配置する（既定はfalse）
+% float=true|false: フロートを行取りで配置する（既定はfalse）
 \DeclareBoolOption[false]{float}
 % フロートまわりのアキ．指定しなければクラスファイルの値を使う
 \DeclareStringOption{floatsep}
@@ -32,20 +32,20 @@
 \@gyoudori@setsep{dblfloatsep}
 \@gyoudori@setsep{dbltextfloatsep}
 
-%% 行ドリの基準：\normalsizeの「阿」の高さ・深さと行送り
+%% 行取りの基準：\normalsizeの「あ」の高さ・深さ（JFMの字の枠）と行送り
 \newdimen\@gyoudori@ht
 \newdimen\@gyoudori@dp
 \newdimen\@gyoudori@bs
 \def\@gyoudori@metrics{%
   \begingroup
     \normalsize
-    \setbox\z@\hbox{阿}%
+    \setbox\z@\hbox{あ}%
     \global\@gyoudori@ht\ht\z@
     \global\@gyoudori@dp\dp\z@
     \global\@gyoudori@bs\normalbaselineskip
   \endgroup}
 
-% #1行ドリの領域の高さ：(#1-1)行送り + 阿の高さ + 阿の深さ
+% #1行取りの領域の高さ：行送りに#1から1を減じた数を掛け，「あ」の高さと深さを加えた長さ
 \def\@gyoudori@areaheight#1{%
   \dimexpr\@gyoudori@bs*(#1-1)+\@gyoudori@ht+\@gyoudori@dp\relax}
 
@@ -59,17 +59,19 @@
 %% 領域の中での位置
 \def\@gyoudori@pos@t#1{#1\vss}
 \def\@gyoudori@pos@c#1{\vss#1\vss}
-\def\@gyoudori@pos@b#1{\vss#1\vskip\z@}% \vskip\z@で深さを0にし，下端に揃える
+\def\@gyoudori@pos@b#1{\vss#1\vskip\z@}% \vskip\z@で深さを0にし，下端にそろえる
 
 \def\@gyoudori@checkpos#1{%
   \@ifundefined{@gyoudori@pos@#1}{%
     \PackageError{gyoudori}{Undefined position `#1'}{%
       The position is t, c or b.}}{}}
 
-%% 行ドリの本体：#3を#2行ドリして，位置#1（t/c/b）に置く．
-% 領域全体を1つのボックスにし，高さを1行目の字面の高さ（阿の高さ）に，深さを残り
+%% 行取りの本体：#3を#2行取りして，位置#1（t/c/b）に置く．
+% 領域全体を1つのボックスにし，高さを1行目の字の枠の高さ（「あ」の高さ）に，深さを残り
 % 全部にして\baselineskipで置く．次の行は領域の最終行から\baselineskipで送る
 % （https://abenori.blogspot.com/2017/12/gyodori.html による）．
+% ページ（段）の先頭では，\topskipにより領域の上端が1行目の字の枠の上端（版面の天）に
+% つき，領域の中の位置は#1に従う．
 \newbox\@gyoudori@area
 \def\@gyoudori@place#1#2#3{%
   \@gyoudori@metrics
@@ -83,10 +85,10 @@
   \par
   \prevdepth\@gyoudori@dp}
 
-%% 行ドリした環境の直後
+%% 行取りした環境の直後
 % 空行がなければ後続の段落を字下げせず，\parskipも入れない（リスト内の\parsepで
 % 行送りがずれないように）．空行があれば通常の段落とする．
-% 環境を抜けた後に，LaTeXの\@doendpeと同じしくみで処理する．
+% 環境を抜けた後に，LaTeXの\@doendpeと同じ仕組みで処理する．
 \def\@gyoudori@doendpe{%
   \edef\@gyoudori@restoreparskip{\parskip\the\parskip\relax}%
   \parskip\z@skip
@@ -98,23 +100,34 @@
     \@gyoudori@restoreparskip\everypar{}\@endpefalse}}
 
 %% ユーザー命令
+% 見出しとして使うので，直後では改ページ・改段しない．見出しの後ろに本文の行が
+% 1行も入らないときは，見出し全体が次のページ（段）の先頭に送られる
+% （JLREQ 4.1.7 b）．
 \newbox\@gyoudori@box
 \newenvironment{gyoudori}[2][c]{%
   \@gyoudori@checkpos{#1}%
   \def\@gyoudori@args{{#1}{#2}}%
   \setbox\@gyoudori@box\vbox\bgroup}{%
   \egroup
-  \expandafter\@gyoudori@place\@gyoudori@args{\box\@gyoudori@box}}
+  \expandafter\@gyoudori@place\@gyoudori@args{\box\@gyoudori@box}%
+  \nobreak}
 \AddToHook{env/gyoudori/after}{\@gyoudori@doendpe}
 
 \newcommand\gyoudoriarea[3][c]{%
   \@gyoudori@checkpos{#1}%
-  \@gyoudori@place{#1}{#2}{#3}}
+  \@gyoudori@place{#1}{#2}{#3}%
+  \nobreak}
 
-%% ディスプレイ数式の自動行ドリ（displaymath=true）
-% 数式を環境の外側で開いたボックスに組み，それが収まる最少の行数（2行以上）で
-% 行ドリして中央に置く．
+%% ディスプレイ数式の自動行取り（displaymath=true）
+% 数式を環境の外側で開いたボックスに組み，行取りの領域に置く．
+% 位置は，数式の1行目と最後の行のベースラインの中点を，領域の1行目と最後の行の
+% ベースラインの中点に合わせる（1行の式を奇数行取りにすると，式のベースラインが
+% 中央の行のベースラインにのる）．行数は，この位置で数式の箱が収まる最少の行数
+% （2行以上）とする．箱は，領域の外側の行間に半分まではみ出してよい（隣の行の字の
+% 枠との間には行間の半分以上が空く）．
 \newbox\@gyoudori@mathbox
+\newdimen\@gyoudori@mathbase % 数式の1行目から最後の行までのベースラインの距離
+\newdimen\@gyoudori@mathoff  % 領域の上端から数式の箱の上端まで
 
 \def\@gyoudori@math@begin{%
   \par
@@ -122,6 +135,7 @@
     \hsize\linewidth \parshape\z@
     \abovedisplayskip\z@ \belowdisplayskip\z@
     \abovedisplayshortskip\z@ \belowdisplayshortskip\z@
+    \penalty-\@M % 1行目のベースラインを求めるための区切り
     \noindent}
 
 \def\@gyoudori@math@end{%
@@ -129,12 +143,33 @@
     \unskip\unpenalty\unskip\unpenalty % \belowdisplayskipと\postdisplaypenaltyを除く
   \egroup
   \@gyoudori@metrics
-  \@gyoudori@fitlines\tw@{\dimexpr\ht\@gyoudori@mathbox+\dp\@gyoudori@mathbox\relax}%
-  \@gyoudori@place{c}{\@gyoudori@lines}{\box\@gyoudori@mathbox}%
+  % 先頭の区切りで\vsplitすると，残りの先頭に「\splittopskipから1行目の高さを
+  % 減じた長さ」のグルーが入るので，残りの高さから1行目と最後の行のベースラインの距離がわかる
+  \begingroup
+    \setbox\z@\copy\@gyoudori@mathbox
+    \vbadness\@M \vfuzz\maxdimen \splitmaxdepth\maxdimen
+    \splittopskip1000\p@
+    \setbox\tw@\vsplit\z@ to\z@
+    \global\@gyoudori@mathbase\dimexpr\ht\z@-1000\p@\relax
+  \endgroup
+  \@gyoudori@lines\@ne
+  \loop
+    \advance\@gyoudori@lines\@ne
+    \@gyoudori@mathoff\dimexpr
+      \@gyoudori@ht+\@gyoudori@bs*(\@gyoudori@lines-1)/2
+      -\ht\@gyoudori@mathbox+\@gyoudori@mathbase/2\relax
+    \@tempswafalse
+    \ifdim\@gyoudori@mathoff<-.5\@gyoudori@linegap \@tempswatrue \fi
+    \ifdim\dimexpr\@gyoudori@mathoff+\ht\@gyoudori@mathbox+\dp\@gyoudori@mathbox\relax
+        >\dimexpr\@gyoudori@areaheight\@gyoudori@lines+\@gyoudori@linegap/2\relax
+      \@tempswatrue \fi
+  \if@tempswa\repeat
+  \@gyoudori@place{t}{\@gyoudori@lines}%
+    {\kern\@gyoudori@mathoff\box\@gyoudori@mathbox}%
   \@gyoudori@doendpe}
 
 % 環境のグループの外側（before/after）にフックする．align*は内部で\endalignを
-% 呼ぶが，フックは\begin/\endでだけ働くので二重にはならない．
+% 呼ぶが，フックは\begin/\endでだけはたらくので二重にはならない．
 \def\@gyoudori@math@hook#1{%
   \AddToHook{env/#1/before}{\@gyoudori@math@begin}%
   \AddToHook{env/#1/after}{\@gyoudori@math@end}}
@@ -148,18 +183,18 @@
   \@gyoudori@math@hook{gather*}
 \fi
 
-%% フロートの行ドリ（float=true）
-% フロートは，それが収まる最少の行ドリ領域（1行以上）のボックスにする．
+%% フロートの行取り（float=true）
+% フロートは，それが収まる最少の行取り領域（1行以上）のボックスにする．
 % 置き場所が決まったら，同じ高さのまま中身を上なら[t]，下なら[b]，ここなら中央に
-% 組み直し，領域が本文の行の字面にそろうようにずらす．
-% アキは「行間 + 行送りの整数倍」に丸めるので，フロートの前後で本文の行送りは
+% 組み直し，領域が本文の行の字の枠にそろうようにずらす．
+% アキは「行送りの整数倍に行間を加えた長さ」に丸めるので，フロートの前後で本文の行送りは
 % ずれない．フロートだけのページは対象外．
 
-% 行間：行送り − 阿の高さ − 阿の深さ
+% 行間：行送りから「あ」の高さと深さを減じた長さ
 \def\@gyoudori@linegap{%
   \dimexpr\@gyoudori@bs-\@gyoudori@ht-\@gyoudori@dp\relax}
 
-% アキ#1を，「行間 + 行送りの整数倍」のうち#1以上で最小のものにする（伸縮なし）
+% アキ#1を，「行送りの整数倍に行間を加えた長さ」のうち#1以上で最小のものにする（伸縮なし）
 \def\@gyoudori@roundsep#1{%
   \@tempdima\@gyoudori@linegap
   \@whiledim\@tempdima<#1\do{\advance\@tempdima\@gyoudori@bs}%
@@ -175,7 +210,7 @@
   \@gyoudori@roundsep\intextsep
   \advance\intextsep-.5\@gyoudori@linegap}
 
-% \end{figure}など：フロートのボックスを行ドリ領域の高さにする（中身は[t]）
+% \end{figure}など：フロートのボックスを行取り領域の高さにする（中身は[t]）
 \def\@gyoudori@float@box{%
   \@gyoudori@metrics
   \@gyoudori@fitlines\@ne{\dimexpr\ht\@currbox+\dp\@currbox\relax}%
@@ -203,13 +238,24 @@
 \def\@gyoudori@floatpos{t}
 \def\@gyoudori@floatshift{\z@}
 
-% 上のフロート：[t]．本文1行目の字面の上端（\topskip − 阿の高さ）にそろえる
+% 上のフロート：[t]．本文1行目の字の枠の上端（\topskipから「あ」の高さを減じた位置）にそろえる
 \def\@gyoudori@floattop{%
   \@gyoudori@metrics
   \def\@gyoudori@floatpos{t}%
   \edef\@gyoudori@floatshift{\the\dimexpr\topskip-\@gyoudori@ht\relax}}
 
-% 本文の直後に置く下のフロート：[b]．本文の最終行の実際の深さ#1を阿の深さと
+% \@tempdimb = 段#1の最後の行の深さ．段の箱の深さは\maxdepthで打ち切られている
+% ことがあるので，最後の箱を取り出してその深さを使う．最後の箱が行取りの領域なら，
+% その深さは「行送りの整数倍に「あ」の深さを加えた長さ」なので，行送りで割った余りをとる
+\def\@gyoudori@lastdepth#1{%
+  \setbox\z@\vbox{%
+    \unvcopy#1%
+    \global\@tempdimb\dp#1%
+    \ifnum\lastnodetype=\@ne \setbox\z@\lastbox \global\@tempdimb\dp\z@ \fi
+    \ifnum\lastnodetype=\tw@ \setbox\z@\lastbox \global\@tempdimb\dp\z@ \fi}%
+  \@whiledim\@tempdimb>\@gyoudori@bs\do{\advance\@tempdimb-\@gyoudori@bs}}
+
+% 本文の直後に置く下のフロート：[b]．本文の最終行の実際の深さ#1を「あ」の深さと
 % みなしてそろえる
 \def\@gyoudori@floatbot#1{%
   \@gyoudori@metrics
@@ -244,7 +290,9 @@
   \if@gyoudori@pushed
     \@gyoudori@floatbot\@gyoudori@dp % ずらさない
   \else
-    \@gyoudori@floatbot{\dp\@outputbox}%
+    \@gyoudori@metrics
+    \@gyoudori@lastdepth\@outputbox
+    \@gyoudori@floatbot\@tempdimb
   \fi
   \@gyoudori@orig@cflb
   \@gyoudori@bottomfit}
@@ -262,13 +310,13 @@
   \fi}
 
 % 下のフロートの並びの末尾を整える
-% ・最後のフロートの下端から阿の深さだけ上を行のベースラインとみなし，深さ阿の
+% ・最後のフロートの下端から「あ」の深さだけ上を行のベースラインとみなし，深さ「あ」の
 %   深さの空の行を置く（flushendが最終ページで段をつなぎ直すときにも，行として
 %   扱われて行送りがそろう）
-% ・その後に「版面に入る最終行のベースラインから版面の下端までの余り − 阿の深さ」
+% ・その後に『版面に入る最終行のベースラインと版面の下端との間の余りから「あ」の深さを減じた長さ』
 %   を足す（脚注があれば，版面の高さから脚注の高さを引いて求める）．
-%   押し下げられたとき（\clearpageの\vfil）に最終行の字面の下端にそろい，
-%   字面の下端が版面からはみ出すクラスでもOverfullにならない
+%   押し下げられたとき（\clearpageの\vfil）に最終行の字の枠の下端にそろい，
+%   字の枠の下端が版面からはみ出すクラスでもOverfullにならない
 % ・押し下げられたときは，\@textbottom（\raggedbottomの.0001fil）の伸びを打ち消す
 \def\@gyoudori@bottomfit{%
   \@gyoudori@footnoteheight
@@ -282,7 +330,7 @@
     \hbox{\vrule\@height\z@\@depth\@gyoudori@dp\@width\z@}%
     \vskip\dimexpr\@tempdima-\@gyoudori@dp\relax}}
 
-% フロートの並びを作るときに1つずつ呼ばれる
+% フロートの並びをつくるときに1つずつ呼ばれる
 \def\@gyoudori@comflelt#1{%
   \@gyoudori@float@set#1\@gyoudori@floatpos\@gyoudori@floatshift
   \@gyoudori@orig@comflelt#1}
@@ -294,7 +342,7 @@
     \@gyoudori@floattop
   \else
     % nidanfloatの段抜きの下：[b]．並びの下端は版面の下端に来るので，
-    % 版面に入る最終行の字面の下端にそろえる
+    % 版面に入る最終行の字の枠の下端にそろえる
     \@gyoudori@metrics
     \@gyoudori@lastlinegap\textheight
     \def\@gyoudori@floatpos{b}%
@@ -306,15 +354,19 @@
   \@gyoudori@float@set#1\@gyoudori@floatpos\@gyoudori@floatshift
   \@gyoudori@orig@comdblflelt#1}
 
-% ここのフロート：中央．直前の行の深さ\@pagedpを阿の深さとみなしてそろえる
+% ここのフロート：中央．直前の行の深さ\@pagedpを「あ」の深さとみなしてそろえる
 % （ここに置けずに上か下に回ったときは，そこで改めて組み直される）
 % 段の先頭に来ると前のアキが捨てられて位置がずれるので，直前では改段させない
 % （\if@nobreakが真だと，カーネルは\interlinepenaltyの代わりに\nobreakを入れる．
-% ここに置けなかったときは元に戻す）
+% ここに置けなかったときはもとに戻す）
+\newdimen\@gyoudori@pd
 \def\@gyoudori@addtocurcol{%
   \@gyoudori@metrics
+  % 直前の行の深さ（行取りの領域なら，行送りで割った余り）
+  \@gyoudori@pd\@pagedp
+  \@whiledim\@gyoudori@pd>\@gyoudori@bs\do{\advance\@gyoudori@pd-\@gyoudori@bs}%
   \@gyoudori@float@set\@currbox{c}%
-    {\dimexpr\@gyoudori@linegap/2+\@gyoudori@dp-\@pagedp\relax}%
+    {\dimexpr\@gyoudori@linegap/2+\@gyoudori@dp-\@gyoudori@pd\relax}%
   \if@nobreak
     \def\@gyoudori@restore@nobreak{\@nobreaktrue}%
   \else
@@ -325,8 +377,8 @@
   \if@insert\else\@gyoudori@restore@nobreak\fi}
 
 % nidanfloatの2段組の段ごとの下のフロート（\L@cflb，\R@cflbの置き換え．
-% nidanfloat v2.9による）．元の定義はフロートの後ろにも\vssがあり，位置が伸びの
-% 配分で決まるので，フロートの並びを段に入る最終行の字面の下端にそろえ，伸びは
+% nidanfloat v2.9による）．もとの定義はフロートの後ろにも\vssがあり，位置が伸びの
+% 配分で決まるので，フロートの並びを段に入る最終行の字の枠の下端にそろえ，伸びは
 % 本文とフロートの間に置く．
 %   #1：段のボックス，#2：フロートのリスト，#3：段の高さ，
 %   #4：\@makecolで組み直される右段では，\@textbottomの伸びを打ち消す
@@ -368,7 +420,7 @@
     \global\@gyoudori@shift\lastskip}}
 
 % 左段の最後の要素について，ベースライン（フロートなら，中身の領域の下端から
-% 阿の深さだけ上）から箱の下端までを\@gyoudori@leftdepthに得る
+% 「あ」の深さだけ上）から箱の下端までを\@gyoudori@leftdepthに得る
 \newdimen\@gyoudori@leftdepth
 \def\@gyoudori@leftlast{%
   \setbox\z@\vbox{%
@@ -387,7 +439,7 @@
 % グルー」を入れるが，段の切れ目がフロートの処理と重なると，それが行間の
 % \baselineskipではなく\topskipになり，つなぎ目が詰まる．
 % 左段の最後の要素のベースラインから，右段の最初の要素のベースライン（フロート
-% なら中身の領域の上端から阿の高さだけ下．中身は箱の上端からずらし量だけ下に
+% なら中身の領域の上端から「あ」の高さだけ下．中身は箱の上端からずらし量だけ下に
 % ある）までを，行送りの整数倍にする
 \def\@gyoudori@colsbreak{%
   \ifdim\ht\@outputbox>\z@
@@ -429,7 +481,7 @@
 
 % evenend：最終ページでは，段内フロートの複製を\@makecolの前にとって自分で段を
 % 組むので，その前に上のフロートを[t]，下のフロートを[b]に組み直しておく
-% （下のフロートは段の下端に付けられるので，ずらさない）
+% （下のフロートは段の下端につけられるので，ずらさない）
 \def\@gyoudori@evenend@prep{%
   \begingroup
     \@gyoudori@floattop
@@ -439,7 +491,7 @@
     \@botlist
   \endgroup}
 
-% 出力ルーチンのマクロ#1の前に#2を足す（元の定義は\@gyoudori@orig@#1）
+% 出力ルーチンのマクロ#1の前に#2を足す（もとの定義は\@gyoudori@orig@#1）
 \def\@gyoudori@prepend#1#2{%
   \expandafter\let\csname @gyoudori@orig@#1\expandafter\endcsname
     \csname #1\endcsname

@@ -1,0 +1,108 @@
+%% gyoudori-fig.tex: マニュアルの図（日本語版・英語版で共通）
+%% 寸法は模式的：字の枠10，行間5，行送り15（単位pt）．ベースラインは字の枠の上端から8.8
+
+%% 行取りの領域
+%% #1：本文，#2：字の枠，#3：行間，#4：行送り，#5：3行取りの領域，
+%% #6：見出し，#7：領域の高さの式
+\newcommand\GyFigArea[7]{%
+  \begin{tikzpicture}[x=1.5pt,y=1.8pt,font=\footnotesize]
+    % 本文の行（1，2行目と6，7行目）
+    \foreach \i in {0,1,5,6} {
+      \fill[black!15] (0,-\i*15) rectangle (150,-\i*15-10);
+    }
+    \node[anchor=west] at (152,-5) {#1};
+    \node[anchor=west] at (152,-80) {#1};
+    % 行取りの領域の中の行の位置（3から5行目）
+    \foreach \i in {2,3,4} {
+      \draw[densely dotted] (0,-\i*15) rectangle (150,-\i*15-10);
+    }
+    % 領域
+    \draw[thick] (0,-30) rectangle (150,-70);
+    % 見出し（領域の中央）
+    \fill[black!45] (20,-42) rectangle (120,-58);
+    \node[white,font=\small\bfseries] at (70,-50) {#6};
+    % 右：領域の高さ
+    \draw[decorate,decoration={brace,amplitude=4pt}] (156,-30) -- (156,-70)
+      node[midway,anchor=west,xshift=6pt,align=left] {#5\\#7};
+    % 左：字の枠，行間，行送り
+    \draw[|-|] (-4,0) -- (-4,-10)
+      node[midway,anchor=east,xshift=-2pt] (fr) {#2};
+    \draw[|-|] (-4,-10) -- (-4,-15) node[midway,anchor=east,xshift=-2pt] {#3};
+    % 行送り：ベースラインどうしの間隔（このパッケージの基準点）．
+    % 寸法線は「字の枠」のラベルの左に置く
+    \coordinate (P) at ([xshift=-7pt]fr.west);
+    \foreach \y in {-8.8,-23.8} {
+      \draw[densely dashed,very thin] ([xshift=-5pt]P |- 0,\y) -- (150,\y);
+    }
+    \draw[|-|] (P |- 0,-8.8) -- (P |- 0,-23.8) node[midway,anchor=east,xshift=-2pt] {#4};
+  \end{tikzpicture}}
+
+%% 領域の中の位置（t/c/b）
+%% #1：本文，#2から#4：t，c，bの説明
+\newcommand\GyFigPos[4]{%
+  \begin{tikzpicture}[x=1.3pt,y=1.3pt,font=\footnotesize]
+    \foreach \col/\lab/\ya/\yb in {0/#2/-30/-46, 90/#3/-42/-58, 180/#4/-54/-70} {
+      \begin{scope}[shift={(\col,0)}]
+        \fill[black!15] (0,0) rectangle (70,-10);
+        \fill[black!15] (0,-15) rectangle (70,-25);
+        \foreach \i in {2,3,4} {
+          \draw[densely dotted] (0,-\i*15) rectangle (70,-\i*15-10);
+        }
+        \draw[thick] (0,-30) rectangle (70,-70);
+        \fill[black!45] (8,\ya) rectangle (62,\yb);
+        \fill[black!15] (0,-75) rectangle (70,-85);
+        \node at (35,-95) {\lab};
+      \end{scope}
+    }
+  \end{tikzpicture}}
+
+%% 3行取りの領域がページの途中と先頭に来たとき
+%% 4つとも版面の天から7行分を描き，左に行番号をつける
+%% #1：見出し，#2：ページの途中（中央），#3から#5：ページの先頭（上寄せ，中央，下寄せ），
+%% #6：版面の天
+\newcommand\GyFigTop[6]{%
+  \begin{tikzpicture}[x=1.12pt,y=1.2pt,font=\footnotesize]
+    % ##1：段の左端，##2：領域の1行目（0始まり），##3：見出しの行，##4：下の説明
+    \def\GyPanel##1##2##3##4{%
+      \begin{scope}[shift={(##1,0)}]
+        \draw[thick] (-5,4) -- (65,4);
+        \draw (-5,4) -- (-5,-104); \draw (65,4) -- (65,-104);
+        \node[anchor=south west,inner xsep=0pt] at (-5,5) {#6};
+        \foreach \i in {0,...,6} {
+          \node[font=\tiny] at (-10,-\i*15-5) {\pgfmathparse{int(\i+1)}\pgfmathresult};
+          \pgfmathparse{(\i<##2)||(\i>##2+2)}
+          \ifnum\pgfmathresult=1
+            \fill[black!15] (0,-\i*15) rectangle (60,-\i*15-10);
+          \else
+            \draw[densely dotted] (0,-\i*15) rectangle (60,-\i*15-10);
+          \fi
+        }
+        \draw[thick] (0,-##2*15) rectangle (60,-##2*15-40);
+        \fill[black!45] (6,-##3*15) rectangle (54,-##3*15-10);
+        \node[white,font=\scriptsize\bfseries] at (30,-##3*15-5) {#1};
+        \node[align=center] at (30,-118) {##4};
+      \end{scope}}
+    \GyPanel{0}{2}{3}{#2}
+    \GyPanel{95}{0}{0}{#3}
+    \GyPanel{190}{0}{1}{#4}
+    \GyPanel{285}{0}{2}{#5}
+  \end{tikzpicture}}
+
+%% 実例の背景に，行の位置（字の枠）をグレーの帯で描く
+%% 段落の1行目の先頭に置く．#1：帯の数．寸法はgyoudoriと同じ（\normalsizeの
+%% 「あ」の高さ・深さと\normalbaselineskip）
+\makeatletter
+\newcommand\GyBands[1]{%
+  \leavevmode
+  \@gyoudori@metrics
+  \edef\GyHt{\strip@pt\@gyoudori@ht}%
+  \edef\GyDp{\strip@pt\@gyoudori@dp}%
+  \edef\GyBs{\strip@pt\@gyoudori@bs}%
+  \edef\GyWd{\strip@pt\linewidth}%
+  \rlap{\begin{tikzpicture}[overlay,x=1pt,y=1pt]
+    \foreach \i in {1,...,#1} {
+      \fill[black!12] (0,\GyHt-\i*\GyBs+\GyBs) rectangle
+        (\GyWd,-\GyDp-\i*\GyBs+\GyBs);
+    }
+  \end{tikzpicture}}}
+\makeatother
