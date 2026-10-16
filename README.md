@@ -48,7 +48,8 @@ cases where one has to typeset under such a specification.
 ## Requirements
 
 - pLaTeX, upLaTeX, or LuaLaTeX with LuaTeX-ja (e.g. ltjsarticle, jlreq);
-  horizontal writing only
+  designed for horizontal writing (vertical writing is not considered; see the
+  limitations in the manual)
 - LaTeX 2020-10-01 or later
 - kvoptions
 
@@ -102,5 +103,5 @@ how it works, and the limitations. Build them with `make doc`
 前後の本文の行を基本版面の行位置からずらさないためのパッケージである．
 𝑛行取りの領域は「字の枠の高さ × 𝑛 + 行間 × (𝑛 − 1)」で，このパッケージは
 既定で内容を領域の中央に置き，位置の指定で上寄せ・下寄せにもできる（領域の定義は
-JLREQ §4.1.6）．pLaTeX，upLaTeX，LuaLaTeX（LuaTeX-ja）で動く．
+JLREQ §4.1.6）．pLaTeX，upLaTeX，LuaLaTeX（LuaTeX-ja）で動く．このパッケージは横組用である．
 詳しくは日本語のマニュアル`doc/gyoudori/gyoudori-ja.pdf`を参照のこと．

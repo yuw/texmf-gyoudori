@@ -33,7 +33,8 @@
 The \pkg{gyoudori} package places headings, display math and floats by
 \emph{gyou-dori}, so that the lines of the main text before and after them stay
 on the line positions of the kihon-hanmen (the line grid). It works with pLaTeX,
-upLaTeX and LuaLaTeX (LuaTeX-ja). A Japanese manual (\texttt{gyoudori-ja.pdf})
+upLaTeX and LuaLaTeX (LuaTeX-ja). The package is designed for horizontal writing.
+A Japanese manual (\texttt{gyoudori-ja.pdf})
 is also available.
 \end{abstract}
 
@@ -54,6 +55,9 @@ even ignoring, the benefit of readers, and is not seldom a choice that abandons
 the consideration of page design. Page design should rather pursue the benefit
 of readers without being tightly bound to the line grid. This package is a tool
 for cases where one has to typeset under such a specification.
+
+This package is for horizontal writing; vertical writing is not considered
+(results of trials in vertical writing are given in Section~\ref{sec:limit}).
 
 \subsection{The gyou-dori area}
 
@@ -587,7 +591,7 @@ are used for $h$, $d$ and $b$.
   taken, top floats are realigned to \opt{t} and bottom floats to \opt{b}.
 \end{description}
 
-\section{Limitations}
+\section{Limitations}\label{sec:limit}
 
 \begin{itemize}
 \item Gyou-dori of floats is based on the line pitch of \cs{normalsize}. So is
@@ -596,8 +600,17 @@ are used for $h$, $d$ and $b$.
 \item \cs{topsep}, \cs{itemsep} and \cs{parsep} of lists are not multiples of
   the line pitch, so lines in and around lists are off the grid.
 \item Float-only pages and columns are not handled.
-\item Vertical writing is not supported. \cs{flushbottom} and the \opt{[H]}
-  placement of the \pkg{float} package have not been tested.
+\item Vertical writing is not considered. In the trials, however (\pkg{tarticle}
+  and \pkg{jlreq} with \opt{tate} in pLaTeX, \pkg{ltjtarticle} in LuaLaTeX),
+  gyou-dori of the \env{gyoudori} environment, display math and floats works as
+  in horizontal writing, and the lines of text before and after stay on the line
+  grid. Since lines advance from right to left, the position \opt{t} aligns to
+  the right and \opt{b} to the left, and an area at the top of a page is put at
+  the right edge of the kihon-hanmen. The exception for even pages in vertical
+  writing (JLREQ \S4.1.7) is not handled. Two-column vertical layouts and the
+  use with other packages have not been tested.
+\item \cs{flushbottom} and the \opt{[H]} placement of the \pkg{float} package
+  have not been tested.
 \item When \pkg{flushend}, footnotes, and a bottom or here float on the last page
   come together, text may be shifted by about 1\,pt.
 \item \cs{fnbelowfloat} of \pkg{stfloats} has no effect in pLaTeX, which uses

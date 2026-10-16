@@ -33,7 +33,7 @@
 \begin{abstract}
 \pkg{gyoudori}は，見出し・ディスプレイ数式・フロートを行取り（行ドリ）で配置し，
 その前後の本文の行を基本版面の行位置からずらさないための\LaTeX{}パッケージである．
-pLaTeX，upLaTeX，LuaLaTeX（LuaTeX-ja）で動く．
+pLaTeX，upLaTeX，LuaLaTeX（LuaTeX-ja）で動く．このパッケージは横組用である．
 英語版のマニュアル（\texttt{gyoudori-en.pdf}）もある．
 \end{abstract}
 
@@ -50,6 +50,9 @@ pLaTeX，upLaTeX，LuaLaTeX（LuaTeX-ja）で動く．
 しばしばあり，誌面デザインの検討を放棄した選択になっている場合も少なくない．本来は，
 行のグリッドに強く縛られることなく，読者の利益を追求して誌面をデザインすべきである．
 このパッケージは，そうした指定のもとで組版しなければならない場合のための道具である．
+
+このパッケージは横組用である．縦組は考慮していない（縦組で試した結果は
+\ref{sec:limit}\nobreak 節に記す）．
 
 \subsection{行取りの領域}
 
@@ -88,7 +91,7 @@ $n$行取りの領域の行送り方向の大きさは，JLREQ（W3C『日本語
 行送りには\cs{normalsize}の\cs{normalbaselineskip}を，字の枠の高さには
 \cs{normalsize}の「あ」の高さ$+$深さ（JFMの寸法）を使う．文中で\cs{small}などに
 切り替えていても，基準は本文の行のグリッドである（ディスプレイ数式と，
-\env{gyoudori}環境・\cs{gyoudoriarea}に\opt{local}を付けた場合を除く．
+\env{gyoudori}環境・\cs{gyoudoriarea}に\opt{local}をつけた場合を除く．
 \ref{sec:env}\nobreak 節，\ref{sec:displaymath}\nobreak 節）．
 
 字の枠の高さは，JFMによって異なる．upLaTeX，LuaTeX-ja（\pkg{jlreq}を含む）の
@@ -159,10 +162,10 @@ JLREQの行間（行送り$-$文字サイズ）と一致する．pLaTeXの標準
 （下寄せ）のいずれかである．\meta{内容}は垂直モードで組まれるので，複数行や文字
 サイズの変更を含められる．
 
-\opt{local}を付けると，\cs{normalsize}の行送りではなく，その場の文字サイズの「あ」の
+\opt{local}をつけると，\cs{normalsize}の行送りではなく，その場の文字サイズの「あ」の
 高さ・深さと\cs{baselineskip}を基準に行取りする．\cs{small}などに切り替えた部分の
 なかで，まわりの行にそろえるときに使う（例：\verb|\begin{gyoudori}[b,local]{2}|）．
-\opt{local}を付けないときは，文字サイズによらず\cs{normalsize}の行送りが基準である．
+\opt{local}をつけないときは，文字サイズによらず\cs{normalsize}の行送りが基準である．
 
 \begin{demo}
 本文の行である．前の段落の最後の行である．
@@ -177,7 +180,7 @@ JLREQの行間（行送り$-$文字サイズ）と一致する．pLaTeXの標準
 空行を置かずに続けた本文は，字下げされない．
 \end{demo}
 
-次は，\cs{small}で組んだ部分のなかで\opt{local}を付けた例である．グレーの帯で
+次は，\cs{small}で組んだ部分のなかで\opt{local}をつけた例である．グレーの帯で
 \cs{small}の行のグリッドを示す．
 
 \begin{demo}
@@ -430,7 +433,7 @@ $A(n)-h$につけ替え，段落を閉じてから置く．\TeX{}は直前の行
 ベースラインから$b$の位置，つまり$n+1$行目に来る．ページ（段）の先頭では，
 \cs{topskip}によって領域の上端が1行目の字の枠の上端につく．この置き方は
 阿部紀行氏の方法による（\url{https://abenori.blogspot.com/2017/12/gyodori.html}）．
-\opt{local}を付けたときは，$h$，$d$，$b$にその場の「あ」の高さ・深さと\cs{baselineskip}を
+\opt{local}をつけたときは，$h$，$d$，$b$にその場の「あ」の高さ・深さと\cs{baselineskip}を
 使う．
 
 \env{gyoudori}環境と\cs{gyoudoriarea}は，置いた直後に\cs{nobreak}を入れて，見出しの
@@ -506,15 +509,21 @@ $h$，$d$，$b$には，その場の「あ」の高さ・深さと\cs{baselinesk
   \opt{t}に，下のフロートを\opt{b}に組み直す．
 \end{description}
 
-\section{制限事項}
+\section{制限事項}\label{sec:limit}
 
 \begin{itemize}
 \item フロートの行取りは，\cs{normalsize}の行送りが基準である．\env{gyoudori}環境と
-  \cs{gyoudoriarea}も，\opt{local}を付けなければ同じである（\ref{sec:env}\nobreak 節）．
+  \cs{gyoudoriarea}も，\opt{local}をつけなければ同じである（\ref{sec:env}\nobreak 節）．
 \item 箇条書きの\cs{topsep}，\cs{itemsep}，\cs{parsep}は行送りの整数倍ではないので，
   箇条書きの中や前後では行の位置がずれる．
 \item フロートだけのページや段は対象外である．
-\item 縦組は対象外である．\cs{flushbottom}の文書，\pkg{float}パッケージの\opt{[H]}との
+\item 縦組は考慮していない．ただし試した範囲（pLaTeXの\pkg{tarticle}と\pkg{jlreq}の
+  \opt{tate}，LuaLaTeXの\pkg{ltjtarticle}）では，\env{gyoudori}環境，ディスプレイ数式，
+  フロートの行取りは横組と同じように働き，前後の本文の行は行のグリッドにのる．
+  縦組では行が右から左へ進むので，位置の\opt{t}は右寄せ，\opt{b}は左寄せになり，
+  ページの先頭に来た領域は版面の右端につく．JLREQ \S4.1.7の縦組の偶数ページの例外は
+  扱わない．縦組での2段組や，ほかのパッケージとの併用は試していない．
+\item \cs{flushbottom}の文書，\pkg{float}パッケージの\opt{[H]}との
   組みあわせは試していない．
 \item \pkg{flushend}と脚注と，最終ページの下のフロートまたはここのフロートが
   重なると，本文が1\,pt前後ずれることがある．
