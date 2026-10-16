@@ -13,6 +13,10 @@
 \newcommand\env[1]{\texttt{#1}}
 \newcommand\cs[1]{\texttt{\char`\\#1}}
 \newcommand\meta[1]{$\langle$\textit{#1}$\rangle$}
+% 命令名の記号と和文の間にも和欧文間のアキを入れる（pTeXの既定では入らない）
+\ifdefined\xspcode
+  \xspcode`\\=3 \xspcode`\{=1 \xspcode`\}=2 \xspcode`\*=3
+\fi
 % 実例の枠
 \newenvironment{demo}
   {\par\medskip\noindent
@@ -173,15 +177,15 @@ JLREQの行間（行送り$-$文字サイズ）と一致する．pLaTeXの標準
 空行を置かずに続けた本文は，字下げされない．
 \end{demo}
 
-次は，\cs{small}で組んだ部分のなかで\opt{local}を付けた例である．グレーの帯は
-\cs{small}の行の位置を示す．
+次は，\cs{small}で組んだ部分のなかで\opt{local}を付けた例である．グレーの帯で
+\cs{small}の行のグリッドを示す．
 
 \begin{demo}
 \small\GyBands[local]{5}\cs{small}で組んだ本文の行である．
 \begin{gyoudori}[local]{3}
 \normalsize\bfseries 3行取り中央の見出し
 \end{gyoudori}
-続く本文の行も，\cs{small}の行の位置に来る．
+続く本文の行も，\cs{small}のグリッドにのる．
 \end{demo}
 
 \begin{itemize}
@@ -285,16 +289,16 @@ $n$行取りの次の行は，$n+1$行目から始まる．ディスプレイ数
   a &= b + c \\
   d &= e
 \end{align}
-式の後の本文も行の位置に来る．
+式の後の本文もグリッドにのる．
 \begin{gather*}
   x = y
 \end{gather*}
 本文の行である．
 \end{demo}
 
-グレーの帯は行の位置（各行の字の枠）を示す．この例では，\env{align}は3行取り，
-\env{gather*}は2行取りの領域の中央に置かれ，その前後の本文はどれも帯の上に来て
-いる．\pkg{amsmath}の\env{align}と\env{gather}は各行に\cs{strut}を入れるので，
+グレーの帯で行のグリッド（各行の字の枠）を示す．この例では，\env{align}は3行取り，
+\env{gather*}は2行取りの領域の中央に置かれ，その前後の本文はどれもグリッドに
+のっている．\pkg{amsmath}の\env{align}と\env{gather}は各行に\cs{strut}を入れるので，
 2行の\env{align}が何行取りになるかは，クラスの行送りによって変わる（この
 マニュアルの\pkg{jlreq}では3行取り，\pkg{jsarticle}では2行取り）．
 
@@ -321,16 +325,16 @@ $n$行取りの次の行は，$n+1$行目から始まる．ディスプレイ数
 最後の本文の行である．
 \end{demo}
 
-この例では，上から2行取り，4行取り，3行取りになっている．どの場合も，次の本文は帯の上から始まる．
+この例では，上から2行取り，4行取り，3行取りになっている．どの場合も，次の本文はグリッドにのる．
 
-次は\cs{small}で組んだ部分のなかの例である．グレーの帯は\cs{small}の行の位置を示す．
+次は\cs{small}で組んだ部分のなかの例である．グレーの帯で\cs{small}の行のグリッドを示す．
 
 \begin{demo}
 \small\GyBands[local]{6}\cs{small}で組んだ解答の行である．
 \begin{gather*}
   \int_0^1 x^2\,dx = \frac{1}{3}
 \end{gather*}
-続く行も\cs{small}の行の位置に来る．
+続く行も\cs{small}のグリッドにのる．
 \begin{gather*}
   x = y
 \end{gather*}

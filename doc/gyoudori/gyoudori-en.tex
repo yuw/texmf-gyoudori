@@ -207,14 +207,14 @@ Text that follows without a blank line is not indented.
 \end{demo}
 
 The next example uses \opt{local} inside a part set in \cs{small}. The gray
-bands show the line positions of \cs{small}.
+bands show the line grid of \cs{small}.
 
 \begin{demo}
 \small\GyBands[local]{5}A line of text set in \cs{small}.
 \begin{gyoudori}[local]{3}
 \normalsize\bfseries A heading centered in 3 lines
 \end{gyoudori}
-The following line also stays on the line positions of \cs{small}.
+The following line also stays on the grid of \cs{small}.
 \end{demo}
 
 \begin{itemize}
@@ -343,10 +343,10 @@ The text after the display is on the grid.
 A line of text.
 \end{demo}
 
-The gray bands show the line positions (the character frame of each line).
+The gray bands show the line grid (the character frame of each line).
 In this example, the \env{align} is centered in a 3-line area and the
 \env{gather*} in a 2-line area, and the text before and after them stays on the
-bands. Since \env{align} and \env{gather} of \pkg{amsmath} insert \cs{strut} in
+grid. Since \env{align} and \env{gather} of \pkg{amsmath} insert \cs{strut} in
 every row, the number of lines of a two-row \env{align} depends on the line
 pitch of the class (three lines with \pkg{jlreq} used for this manual, two lines
 with \pkg{jsarticle}).
@@ -374,17 +374,17 @@ More text. A case analysis:
 The last line of text.
 \end{demo}
 
-In this example, the displays take two, four and three lines, and the text after each of them starts on a band.
+In this example, the displays take two, four and three lines, and the text after each of them is on the grid.
 
 The next example is inside a part set in \cs{small}. The gray bands show the
-line positions of \cs{small}.
+line grid of \cs{small}.
 
 \begin{demo}
 \small\GyBands[local]{6}A line of an answer set in \cs{small}.
 \begin{gather*}
   \int_0^1 x^2\,dx = \frac{1}{3}
 \end{gather*}
-The following line is also on the line positions of \cs{small}.
+The following line is also on the grid of \cs{small}.
 \begin{gather*}
   x = y
 \end{gather*}
