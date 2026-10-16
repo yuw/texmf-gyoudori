@@ -24,7 +24,7 @@
 \title{The \pkg{gyoudori} package\\[.5ex]\large Gyou-dori (line-based placement)
   for Japanese typesetting}
 \author{Yuwsuke Kieda}
-\date{2026-10-16\quad v20261016.0}
+\date{2026-10-16\quad v20261016.1}
 
 \begin{document}
 \maketitle
@@ -185,10 +185,25 @@ Put \texttt{gyoudori.sty} into your TEXMF tree (e.g.\ \texttt{tex/latex/gyoudori
 <content>
 \end{gyoudori}
 \end{verbatim}
-places \meta{content} in a \meta{lines}-line gyou-dori area. \meta{options} is a
-comma-separated list of a position and \opt{local}. The position is \opt{t}
-(top), \opt{c} (center, default) or \opt{b} (bottom). The content is set in
-vertical mode, so it may contain several lines or size changes.
+places \meta{content} in a \meta{lines}-line gyou-dori area. \meta{lines} must be
+an integer of 1 or more; otherwise an error is raised. \meta{options} is a
+comma-separated list of the following.
+\begin{description}
+\item[Position] \opt{t} (top), \opt{c} (center, default) or \opt{b} (bottom).
+\item[\opt{local}] Base the gyou-dori on the current font size (see below).
+\item[\opt{indent}, \opt{noindent}] Indent the paragraphs of \meta{content} or
+  not. The default is given by the package option \opt{indent}
+  (Section~\ref{sec:indent}; no indentation by default).
+\end{description}
+The content is set in vertical mode, so it may contain several lines or size
+changes. The content is positioned by its character frames: the range from the
+height of ``あ'' above the baseline of its first line to the depth of ``あ'' below
+the baseline of its last line, both in the last font size of the content, is
+placed in the area according to the position. A heading of Latin letters only is
+thus placed at the same position as a Japanese one. If the ink of the content
+extends into the line gaps outside the area by more than half of them, a warning
+is issued (an error with the package option \opt{overflow};
+Section~\ref{sec:overflow}).
 
 With \opt{local}, the gyou-dori is based not on the line pitch of
 \cs{normalsize} but on the height and depth of ``あ'' in the current font size
@@ -314,11 +329,27 @@ Options are given as key-value pairs. For a Boolean option, the key alone means
 \usepackage[displaymath,float,textfloatsep=2\baselineskip]{gyoudori}
 \end{verbatim}
 
+\subsection{\opt{overflow=warning|error}}\label{sec:overflow}
+
+Whether to issue a warning (\opt{warning}, default) or an error (\opt{error})
+when the content of the \env{gyoudori} environment or \cs{gyoudoriarea} does not
+fit in the area (its ink extends into the line gaps outside the area by more
+than half of them). The number of lines is not increased automatically.
+
+\subsection{\opt{indent=true|false}}\label{sec:indent}
+
+Whether to indent the paragraphs of the content of the \env{gyoudori}
+environment and \cs{gyoudoriarea}. The default is \opt{false} (no indentation).
+It can be changed for each area with \opt{indent} and \opt{noindent}
+(Section~\ref{sec:env}).
+
 \subsection{\opt{displaymath=true|false}}\label{sec:displaymath}
 
 Display math is placed by gyou-dori automatically. The default is \opt{false}.
-The environments \env{eqnarray}, \env{align} and \env{gather} and their starred
-forms are handled (\env{align} and \env{gather} need \pkg{amsmath}). Each display
+Handled are \env{equation}, \env{eqnarray}, math enclosed by \cs{[} and \cs{]}
+(the \env{displaymath} environment), and \env{equation*}, \env{align},
+\env{gather}, \env{multline}, \env{flalign} and \env{alignat} of \pkg{amsmath},
+with their starred forms. Math enclosed by \verb|$$| is not handled. Each display
 is placed so that the midpoint between the baselines of its first and last rows
 coincides with the midpoint between the baselines of the first and last lines of
 the area; a one-row display in an area of an odd number of lines thus sits on
@@ -411,6 +442,12 @@ Floats are placed by gyou-dori. The default is \opt{false}.
   pitch'' that is not less than the given value, without stretch or shrink.
   \cs{intextsep}, which is used both above and below, takes half of the line gap.
 \end{itemize}
+\begin{itemize}
+\item On a float-only page (column), the floats are aligned to the top, with the
+  top of the area of the first float on the top of the character frame of the
+  first line of text; the separation between floats (\cs{@fpsep}) is rounded
+  in the same way.
+\end{itemize}
 Thus the text lines around floats stay on the grid. \LaTeX{} changes a lone
 \opt{[h]} into \opt{[ht]}; a float that goes to the top instead is realigned to
 the top. No column break is allowed right before a float placed here.
@@ -488,16 +525,28 @@ area.
 
 \subsection{Placing a gyou-dori area}\label{sec:place}
 
-The content is set in a \cs{vbox} of height $A(n)$ with \cs{vss} after, around
-or before it (for \opt{t}, \opt{c} and \opt{b}). The height of this box is changed
-to $h$ and its depth to $A(n)-h$, and the box is put after the paragraph is
-ended. \TeX{} inserts \cs{baselineskip} glue so that the baseline of the box (the
-baseline of the first line of the area) is at distance $b$ from the previous
-baseline. After the box, \cs{prevdepth} is set to $d$, so the next line is at
-distance $b$ from the baseline of the last line of the area, i.e.\ on line $n+1$.
+The content is set in a \cs{vbox} of height $A(n)$, whose height is then changed
+to $h$ and depth to 0 (the content is drawn hanging below). After the paragraph
+is ended, this box, a kern of $n-1$ times the line pitch, and an empty box of
+height 0 and depth $d$ are put. \TeX{} inserts \cs{baselineskip} glue so that the
+baseline of the box (the baseline of the first line of the area) is at distance
+$b$ from the previous baseline. The empty box stands for the last line of the
+area, so the next line is at distance $b$ from its baseline, i.e.\ on line $n+1$.
 At the top of a page (column), \cs{topskip} puts the top of the area on the top
-of the character frame of the first line. This is the method of Noriyuki Abe
-(\url{https://abenori.blogspot.com/2017/12/gyodori.html}).
+of the character frame of the first line. No page break is possible among the
+three items, and the page builder treats them like $n$ lines of text. This is
+based on the method of Noriyuki Abe
+(\url{https://abenori.blogspot.com/2017/12/gyodori.html}), which represents the
+area by a single box of large depth; it was split into three items because a
+box whose depth exceeds \cs{maxdepth} may extend below the last line at a page
+break.
+
+For the \env{gyoudori} environment and \cs{gyoudoriarea}, a \cs{penalty}$-10000$
+is put at the beginning of the box of the content, and the distance $\Delta$
+between the baselines of its first and last lines is obtained as for display math
+(Section~\ref{sec:math}). With $h_c$ and $d_c$, the height and depth of ``あ'' in
+the last font size of the content, the frame range (of height
+$\Delta+h_c+d_c$) is aligned to the top, center or bottom of the area.
 With \opt{local}, the height and depth of ``あ'' in the current font size and
 \cs{baselineskip} are used for $h$, $d$ and $b$.
 
@@ -545,8 +594,9 @@ are used for $h$, $d$ and $b$.
 \item[Top floats (\cs{@cflt})] $p=\opt{t}$, $\delta=\cs{topskip}-h$; the top of the
   area is on the top of the character frame of the first line.
 \item[Bottom floats (\cs{@cflb})] $p=\opt{b}$, $\delta=d-d_{\mathrm{last}}$, where
-  $d_{\mathrm{last}}$ is the depth of the last box in the column modulo $b$ (it is
-  $d$ if the last box is a gyou-dori area). After the floats, an empty line of
+  $d_{\mathrm{last}}$ is the depth of the last box in the column (measured by
+  taking out the last box, since the depth of the column box may be cut at
+  \cs{maxdepth}). After the floats, an empty line of
   height 0 and depth $d$ and glue of ``$r-d$'' are added, where $r$ is ``the
   column height $-\cs{topskip}$'' modulo $b$. Then, even when the floats are
   pushed down by the \cs{vfil} of \cs{clearpage}, their bottom is on the bottom of
@@ -556,13 +606,20 @@ are used for $h$, $d$ and $b$.
   cancelled.
 \item[Here floats (\cs{@addtocurcol})] $p=\opt{c}$,
   $\delta=g/2+d-d_{\mathrm{prev}}$, where $d_{\mathrm{prev}}$ is the depth of the
-  previous line modulo $b$. A \cs{nobreak} is inserted before the float so that
+  previous line (\cs{@pagedp}). A \cs{nobreak} is inserted before the float so that
   it does not start a column.
 \item[Rounding of separations] Each separation is set to the smallest value of
   the form $g+kb$ ($k\ge0$ an integer) that is not less than the given value,
   without stretch or shrink; \cs{intextsep}, used above and below, is
   $g/2+kb$. Then ``float area $+$ separation'' is a multiple of $b$, and the text
   lines are not shifted.
+\item[Float-only pages] \cs{@fptop} is set to $\cs{topskip}-h$ without stretch,
+  \cs{@fpsep} is rounded like the other separations, and \cs{@fpbot} keeps its
+  stretch. The floats are realigned to the top in \cs{@wtryfc}, which stacks
+  them (they keep the alignment of a trial as a here float). Since the fitting
+  test (\cs{@xtryfc}) does not count \cs{@fptop}, the column height is reduced by
+  it during the test. Float-only pages of double-column floats are handled in the
+  same way.
 \item[Order of footnotes] The \cs{@makecol} of pLaTeX puts footnotes after the
   floats, so their height is subtracted from the column height when computing
   $r$. The \cs{@makecol} of \LaTeX{} 2025-06-01 or later (e.g.\ LuaLaTeX) puts the
@@ -599,7 +656,6 @@ are used for $h$, $d$ and $b$.
   \opt{local} (Section~\ref{sec:env}).
 \item \cs{topsep}, \cs{itemsep} and \cs{parsep} of lists are not multiples of
   the line pitch, so lines in and around lists are off the grid.
-\item Float-only pages and columns are not handled.
 \item Vertical writing is not considered. In the trials, however (\pkg{tarticle}
   and \pkg{jlreq} with \opt{tate} in pLaTeX, \pkg{ltjtarticle} in LuaLaTeX),
   gyou-dori of the \env{gyoudori} environment, display math and floats works as
@@ -615,15 +671,10 @@ are used for $h$, $d$ and $b$.
   come together, text may be shifted by about 1\,pt.
 \item \cs{fnbelowfloat} of \pkg{stfloats} has no effect in pLaTeX, which uses
   its own \cs{@makecol}.
-\item In classes whose text height is not on the line grid (e.g.\ \pkg{jarticle}
-  of pLaTeX), there is a remainder below the last line, so the area of display
-  math may extend below the last line by up to one line. The \env{gyoudori}
-  environment and \cs{gyoudoriarea} allow no break right after them, so they
-  move to the next page (column) instead.
+\item Display math enclosed by \verb|$$| is not placed by gyou-dori.
 \item Known, not yet fixed: with \pkg{nidanfloat} and \opt{displaymath} together,
-  text lines may be shifted off the grid. The processing of \pkg{nidanfloat} that
-  moves text overflowing the left column into the right column seems to interfere
-  with the large depth of the boxes of gyou-dori areas.
+  text lines may be shifted off the grid. The cause has not been identified yet
+  (it was confirmed not to be the depth of the boxes of gyou-dori areas).
 \end{itemize}
 
 \section{References}

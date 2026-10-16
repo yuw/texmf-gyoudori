@@ -1,7 +1,7 @@
 # gyoudori — gyou-dori (line-based placement) for Japanese typesetting
 
 - Author: Yuwsuke Kieda
-- Version: v20261016.0 (2026-10-16)
+- Version: v20261016.1 (2026-10-16)
 - License: MIT
 - Repository: https://github.com/yuw/texmf-gyoudori
 
@@ -33,16 +33,19 @@ cases where one has to typeset under such a specification.
 ## Features
 
 - The `gyoudori` environment and the `\gyoudoriarea` command place their
-  content in an 𝑛-line gyou-dori area (top, center or bottom). With the
-  `local` option they follow the current font size and `\baselineskip`, so that
-  they also work inside `\small` etc.
-- Option `displaymath`: display math (`eqnarray`, `align`, `gather` and their
-  starred forms) is centered by its baselines in the smallest area of at least
+  content in an 𝑛-line gyou-dori area (top, center or bottom), positioned by
+  the character frames of the content. With the `local` option they follow the
+  current font size and `\baselineskip`, so that they also work inside `\small`
+  etc. Content that does not fit causes a warning (or an error).
+- Option `displaymath`: display math (`equation`, `\[ \]`, `eqnarray`, and
+  `equation*`, `align`, `gather`, `multline`, `flalign`, `alignat` of amsmath,
+  with their starred forms) is centered by its baselines in the smallest area of at least
   two lines (a one-row display in an odd-line area sits on the middle line).
   It follows the current font size and `\baselineskip`, so displays in
   footnotes or in parts set in `\small` stay on the surrounding line pitch.
 - Option `float`: floats are put into the smallest gyou-dori area and aligned to
-  the line grid; the float separations are rounded to whole lines.
+  the line grid; the float separations are rounded to whole lines. Float-only
+  pages are aligned to the grid as well.
   Works with nidanfloat, stfloats, flushend and evenend.
 
 ## Requirements
@@ -77,8 +80,9 @@ More text in \small stays on its own line grid.\par}
 ```
 
 The optional argument of the `gyoudori` environment and `\gyoudoriarea` is a
-comma-separated list of a position (`t`, `c`, `b`) and `local`. Without
-`local`, the line pitch of `\normalsize` is used regardless of the font size.
+comma-separated list of a position (`t`, `c`, `b`), `local`, and `indent` or
+`noindent`. Without `local`, the line pitch of `\normalsize` is used regardless
+of the font size. The content is not indented unless `indent` is given.
 
 Package options (key-value):
 
@@ -86,6 +90,8 @@ Package options (key-value):
 |---|---|---|---|
 | `displaymath` | true/false | false | gyou-dori for display math |
 | `float` | true/false | false | gyou-dori for floats |
+| `overflow` | warning/error | warning | when the content does not fit in the area |
+| `indent` | true/false | false | indent the content of `gyoudori` / `\gyoudoriarea` |
 | `floatsep`, `textfloatsep`, `intextsep`, `dblfloatsep`, `dbltextfloatsep` | length | class value | set the length |
 
 ## Documentation

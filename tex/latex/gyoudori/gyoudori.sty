@@ -1,6 +1,6 @@
 \NeedsTeXFormat{LaTeX2e}[2020/10/01]
 \ProvidesPackage{gyoudori}
-   [2026/10/16 v20261016.0 style file ``gyoudori.sty''^^J
+   [2026/10/16 v20261016.1 style file ``gyoudori.sty''^^J
     by Yuwsuke Kieda]
 
 % pLaTeX/upLaTeXとLuaLaTeX（LuaTeX-ja）で動く．
@@ -20,7 +20,19 @@
 \DeclareStringOption{intextsep}
 \DeclareStringOption{dblfloatsep}
 \DeclareStringOption{dbltextfloatsep}
+% overflow=warning|error: gyoudori環境・\gyoudoriareaの内容が領域に収まらないときに
+% 警告するか（既定），エラーにするか
+\DeclareStringOption[warning]{overflow}
+% indent=true|false: gyoudori環境・\gyoudoriareaの内容の段落を字下げするか（既定はfalse）
+\DeclareBoolOption[false]{indent}
 \ProcessKeyvalOptions*
+
+\def\@tempa{warning}\def\@tempb{error}
+\ifx\gyoudori@overflow\@tempa\else\ifx\gyoudori@overflow\@tempb\else
+  \PackageError{gyoudori}{Unknown value `\gyoudori@overflow' for overflow}{%
+    The value is warning or error.}%
+  \def\gyoudori@overflow{warning}%
+\fi\fi
 
 \def\@gyoudori@setsep#1{%
   \expandafter\ifx\csname gyoudori@#1\endcsname\@empty\else
@@ -57,12 +69,27 @@
 \def\@gyoudori@areaheight#1{%
   \dimexpr\@gyoudori@bs*(#1-1)+\@gyoudori@ht+\@gyoudori@dp\relax}
 
-% 高さ#2が収まる最少の行数（#1行以上）を\@gyoudori@linesに得る
+% 高さ#2が収まる最少の行数（#1行以上）を\@gyoudori@linesに得る．
+% 文書の\loopや\@whiledimの中で呼ばれても干渉しないよう，専用の繰り返しにする
 \newcount\@gyoudori@lines
 \def\@gyoudori@fitlines#1#2{%
   \@gyoudori@lines#1\relax
-  \@whiledim\@gyoudori@areaheight\@gyoudori@lines<#2\do
-    {\advance\@gyoudori@lines\@ne}}
+  \@gyoudori@fitloop{#2}}
+\def\@gyoudori@fitloop#1{%
+  \ifdim\@gyoudori@areaheight\@gyoudori@lines<#1\relax
+    \advance\@gyoudori@lines\@ne
+    \expandafter\@gyoudori@fitloop
+  \else
+    \expandafter\@gobble
+  \fi{#1}}
+
+% 行数#1が1以上の整数か確かめる
+\def\@gyoudori@checklines#1{%
+  \@tempcnta\numexpr#1\relax
+  \ifnum\@tempcnta<\@ne
+    \PackageError{gyoudori}{The number of lines must be 1 or more}{%
+      You gave `#1'.}%
+  \fi}
 
 %% 領域の中での位置
 \def\@gyoudori@pos@t#1{#1\vss}
@@ -74,27 +101,47 @@
     \PackageError{gyoudori}{Undefined position `#1'}{%
       The position is t, c or b.}}{}}
 
-% gyoudori環境と\gyoudoriareaの省略可能な引数：位置（t/c/b）とlocalをカンマで区切って
-% 並べる．位置を\@gyoudori@posに得て，localがあれば基準をその場のものに切り替える
+% gyoudori環境と\gyoudoriareaの省略可能な引数：位置（t/c/b），local，indent，noindentを
+% カンマで区切って並べる．位置を\@gyoudori@posに得て，localがあれば基準をその場のものに
+% 切り替え，indent/noindentで内容の字下げを決める（既定はパッケージオプションindent）
+\newif\if@gyoudori@indent
 \def\@gyoudori@options#1{%
   \def\@gyoudori@pos{c}%
   \let\@gyoudori@getmetrics\@gyoudori@metrics
+  \ifgyoudori@indent\@gyoudori@indenttrue\else\@gyoudori@indentfalse\fi
   \edef\@tempc{\zap@space#1 \@empty}%
   \@for\@tempa:=\@tempc\do{%
     \ifx\@tempa\@empty\else
-      \def\@tempb{local}%
-      \ifx\@tempa\@tempb
-        \let\@gyoudori@getmetrics\@gyoudori@metrics@local
-      \else
-        \@gyoudori@checkpos\@tempa
-        \let\@gyoudori@pos\@tempa
-      \fi
+      \@gyoudori@option\@tempa
     \fi}}
+\def\@gyoudori@option#1{%
+  \def\@tempb{local}%
+  \ifx#1\@tempb
+    \let\@gyoudori@getmetrics\@gyoudori@metrics@local
+  \else
+    \def\@tempb{indent}%
+    \ifx#1\@tempb
+      \@gyoudori@indenttrue
+    \else
+      \def\@tempb{noindent}%
+      \ifx#1\@tempb
+        \@gyoudori@indentfalse
+      \else
+        \@gyoudori@checkpos#1%
+        \let\@gyoudori@pos#1%
+      \fi
+    \fi
+  \fi}
 
 %% 行取りの本体：#3を#2行取りして，位置#1（t/c/b）に置く．
-% 領域全体を1つのボックスにし，高さを1行目の字の枠の高さ（「あ」の高さ）に，深さを残り
-% 全部にして\baselineskipで置く．次の行は領域の最終行から\baselineskipで送る
-% （https://abenori.blogspot.com/2017/12/gyodori.html による）．
+% 領域を1行目の行として\baselineskipで置き，次の行を領域の最終行から\baselineskipで送る
+% （https://abenori.blogspot.com/2017/12/gyodori.html の方法による）．領域は次の3つで
+% 表す．途中に改ページ・改段できるところはなく，ページ分割の上では#2行の本文の行と
+% 同じに扱われる（深さが\maxdepthを超える箱を置かないので，最終行の下にはみ出さない）
+% ・領域の箱：高さを1行目の字の枠の高さ（「あ」の高さ），深さを0にする（中身は下に
+%   はみ出して描かれる）
+% ・行送りに#2から1を減じた数を掛けた長さのカーン（最終行のベースラインまで）
+% ・深さが「あ」の深さの空の箱（最終行）
 % ページ（段）の先頭では，\topskipにより領域の上端が1行目の字の枠の上端（版面の天）に
 % つき，領域の中の位置は#1に従う．
 \newbox\@gyoudori@area
@@ -102,13 +149,83 @@
   \@gyoudori@getmetrics
   \setbox\@gyoudori@area\vbox to\@gyoudori@areaheight{#2}{%
     \csname @gyoudori@pos@#1\endcsname{#3}}%
-  \dp\@gyoudori@area
-    \dimexpr\ht\@gyoudori@area+\dp\@gyoudori@area-\@gyoudori@ht\relax
   \ht\@gyoudori@area\@gyoudori@ht
+  \dp\@gyoudori@area\z@
   \par
   \moveright\@totalleftmargin\box\@gyoudori@area
-  \par
+  \nointerlineskip
+  \kern\dimexpr\@gyoudori@bs*(#2-1)\relax
+  \hbox{\vrule\@height\z@\@depth\@gyoudori@dp\@width\z@}%
   \prevdepth\@gyoudori@dp}
+
+%% gyoudori環境と\gyoudoriareaの内容
+% 内容を箱に組む．先頭の区切り（\penalty-10000）は1行目のベースラインを求めるためのもの．
+% 内容の最後で，その文字サイズの「あ」の高さ・深さ（字の枠）を記録する
+\newdimen\@gyoudori@cht
+\newdimen\@gyoudori@cdp
+\newdimen\@gyoudori@mathbase % 内容（数式）の1行目から最後の行までのベースラインの距離
+\newdimen\@gyoudori@mathoff  % 領域の上端から内容（数式）の箱の上端まで
+\def\@gyoudori@content@begin{%
+  % 直前の行取りの環境の後の字下げの抑制（\@gyoudori@doendpe）は内容には効かせない
+  \@restorepar\everypar{}\@endpefalse
+  \if@gyoudori@indent\else\parindent\z@\fi
+  \penalty-\@M}
+\def\@gyoudori@content@end{%
+  \par
+  \setbox\z@\hbox{あ}%
+  \global\@gyoudori@cht\ht\z@
+  \global\@gyoudori@cdp\dp\z@}
+
+% 箱#1の1行目と最後の行のベースラインの距離を\@gyoudori@mathbaseに得る．箱の先頭に
+% \penalty-10000が必要．その区切りで\vsplitすると，残りの先頭に「\splittopskipから
+% 1行目の高さを減じた長さ」のグルーが入るので，残りの高さから距離がわかる．
+% 行がなければ負になる
+\def\@gyoudori@baselines#1{%
+  \begingroup
+    \setbox\z@\copy#1%
+    \vbadness\@M \vfuzz\maxdimen \splitmaxdepth\maxdimen
+    \splittopskip1000\p@
+    \setbox\tw@\vsplit\z@ to\z@
+    \global\@gyoudori@mathbase\dimexpr\ht\z@-1000\p@\relax
+  \endgroup}
+
+% 内容の箱#3を#2行取りして，位置#1（t/c/b）に置く．内容の1行目のベースラインの
+% 「あ」の高さ上から，最後の行のベースラインの「あ」の深さ下までを字の枠の範囲とし，
+% これを領域の中で位置#1に置く（欧文だけの行でも，和文の行と同じ位置になる）．
+% 内容の字面が領域の外側の行間に半分を超えてはみ出すときは，警告かエラーにする
+\def\@gyoudori@placecontent#1#2#3{%
+  \@gyoudori@getmetrics
+  \@gyoudori@baselines#3%
+  \ifdim\@gyoudori@mathbase<\z@
+    % 行がない：箱の大きさで置く
+    \@gyoudori@mathoff\dimexpr\@gyoudori@areaheight{#2}-\ht#3-\dp#3\relax
+    \if t#1\@gyoudori@mathoff\z@\fi
+    \if c#1\@gyoudori@mathoff.5\@gyoudori@mathoff\fi
+  \else
+    % 字の枠の範囲の上端は箱の上端から\@tempdima下，その範囲の高さは\@tempdimb
+    \@tempdima\dimexpr\ht#3-\@gyoudori@mathbase-\@gyoudori@cht\relax
+    \@tempdimb\dimexpr\@gyoudori@mathbase+\@gyoudori@cht+\@gyoudori@cdp\relax
+    \@gyoudori@mathoff\dimexpr\@gyoudori@areaheight{#2}-\@tempdimb\relax
+    \if t#1\@gyoudori@mathoff\z@\fi
+    \if c#1\@gyoudori@mathoff.5\@gyoudori@mathoff\fi
+    \advance\@gyoudori@mathoff-\@tempdima
+  \fi
+  \@tempswafalse
+  \ifdim\@gyoudori@mathoff<-.5\@gyoudori@linegap \@tempswatrue \fi
+  \ifdim\dimexpr\@gyoudori@mathoff+\ht#3+\dp#3\relax
+      >\dimexpr\@gyoudori@areaheight{#2}+\@gyoudori@linegap/2\relax
+    \@tempswatrue \fi
+  \if@tempswa \@gyoudori@overflow{#2}\fi
+  \@gyoudori@place{t}{#2}{\kern\@gyoudori@mathoff\box#3}}
+
+\def\@gyoudori@overflow#1{%
+  \def\@tempa{error}%
+  \ifx\gyoudori@overflow\@tempa
+    \PackageError{gyoudori}{Content does not fit in #1 line(s)}{%
+      Increase the number of lines or make the content smaller.}%
+  \else
+    \PackageWarning{gyoudori}{Content does not fit in #1 line(s)}%
+  \fi}
 
 %% 行取りした環境の直後
 % 空行がなければ後続の段落を字下げせず，\parskipも入れない（リスト内の\parsepで
@@ -132,17 +249,20 @@
 % localをつけると，\normalsizeではなくその場の文字サイズと行送りで行取りする
 % （\smallなどの中で，まわりの行にそろえる）．
 \newenvironment{gyoudori}[2][c]{%
+  \@gyoudori@checklines{#2}%
   \@gyoudori@options{#1}%
   \edef\@gyoudori@args{{\@gyoudori@pos}{#2}}%
-  \setbox\@gyoudori@box\vbox\bgroup}{%
-  \egroup
-  \expandafter\@gyoudori@place\@gyoudori@args{\box\@gyoudori@box}%
+  \setbox\@gyoudori@box\vbox\bgroup\@gyoudori@content@begin}{%
+  \@gyoudori@content@end\egroup
+  \expandafter\@gyoudori@placecontent\@gyoudori@args\@gyoudori@box
   \nobreak}
 \AddToHook{env/gyoudori/after}{\@gyoudori@doendpe}
 
 \newcommand\gyoudoriarea[3][c]{%
+  \@gyoudori@checklines{#2}%
   \@gyoudori@options{#1}%
-  \expandafter\@gyoudori@place\expandafter{\@gyoudori@pos}{#2}{#3}%
+  \setbox\@gyoudori@box\vbox{\@gyoudori@content@begin#3\@gyoudori@content@end}%
+  \expandafter\@gyoudori@placecontent\expandafter{\@gyoudori@pos}{#2}\@gyoudori@box
   \let\@gyoudori@getmetrics\@gyoudori@metrics
   \nobreak}
 
@@ -155,8 +275,6 @@
 % 枠との間には行間の半分以上が空く）．基準はその場の文字サイズの「あ」の高さ・深さと
 % \baselineskipなので，脚注や\smallの中でもまわりの行にそろう．
 \newbox\@gyoudori@mathbox
-\newdimen\@gyoudori@mathbase % 数式の1行目から最後の行までのベースラインの距離
-\newdimen\@gyoudori@mathoff  % 領域の上端から数式の箱の上端まで
 
 \def\@gyoudori@math@begin{%
   \par
@@ -175,31 +293,27 @@
   % \normalsizeの本文では\normalsizeの基準と同じ）
   \let\@gyoudori@getmetrics\@gyoudori@metrics@local
   \@gyoudori@getmetrics
-  % 先頭の区切りで\vsplitすると，残りの先頭に「\splittopskipから1行目の高さを
-  % 減じた長さ」のグルーが入るので，残りの高さから1行目と最後の行のベースラインの距離がわかる
-  \begingroup
-    \setbox\z@\copy\@gyoudori@mathbox
-    \vbadness\@M \vfuzz\maxdimen \splitmaxdepth\maxdimen
-    \splittopskip1000\p@
-    \setbox\tw@\vsplit\z@ to\z@
-    \global\@gyoudori@mathbase\dimexpr\ht\z@-1000\p@\relax
-  \endgroup
+  \@gyoudori@baselines\@gyoudori@mathbox
   \@gyoudori@lines\@ne
-  \loop
-    \advance\@gyoudori@lines\@ne
-    \@gyoudori@mathoff\dimexpr
-      \@gyoudori@ht+\@gyoudori@bs*(\@gyoudori@lines-1)/2
-      -\ht\@gyoudori@mathbox+\@gyoudori@mathbase/2\relax
-    \@tempswafalse
-    \ifdim\@gyoudori@mathoff<-.5\@gyoudori@linegap \@tempswatrue \fi
-    \ifdim\dimexpr\@gyoudori@mathoff+\ht\@gyoudori@mathbox+\dp\@gyoudori@mathbox\relax
-        >\dimexpr\@gyoudori@areaheight\@gyoudori@lines+\@gyoudori@linegap/2\relax
-      \@tempswatrue \fi
-  \if@tempswa\repeat
+  \@gyoudori@mathfit
   \@gyoudori@place{t}{\@gyoudori@lines}%
     {\kern\@gyoudori@mathoff\box\@gyoudori@mathbox}%
   \let\@gyoudori@getmetrics\@gyoudori@metrics
   \@gyoudori@doendpe}
+
+% \@gyoudori@linesを1つずつ増やし，数式の箱が収まる最初の行数で止める
+% （文書の\loopと干渉しないよう，\loopは使わない）
+\def\@gyoudori@mathfit{%
+  \advance\@gyoudori@lines\@ne
+  \@gyoudori@mathoff\dimexpr
+    \@gyoudori@ht+\@gyoudori@bs*(\@gyoudori@lines-1)/2
+    -\ht\@gyoudori@mathbox+\@gyoudori@mathbase/2\relax
+  \@tempswafalse
+  \ifdim\@gyoudori@mathoff<-.5\@gyoudori@linegap \@tempswatrue \fi
+  \ifdim\dimexpr\@gyoudori@mathoff+\ht\@gyoudori@mathbox+\dp\@gyoudori@mathbox\relax
+      >\dimexpr\@gyoudori@areaheight\@gyoudori@lines+\@gyoudori@linegap/2\relax
+    \@tempswatrue \fi
+  \if@tempswa \expandafter\@gyoudori@mathfit \fi}
 
 % 環境のグループの外側（before/after）にフックする．align*は内部で\endalignを
 % 呼ぶが，フックは\begin/\endでだけはたらくので二重にはならない．
@@ -207,13 +321,20 @@
   \AddToHook{env/#1/before}{\@gyoudori@math@begin}%
   \AddToHook{env/#1/after}{\@gyoudori@math@end}}
 
+% \[ \]：amsmathはequation*環境として定義し直すので，そのフックで行取りされる．
+% amsmathがないときは，カーネルの\[ \]を包む（displaymath環境も\[ \]を使う）
+\def\@gyoudori@math@brackets{%
+  \@ifpackageloaded{amsmath}{}{%
+    \NewCommandCopy\@gyoudori@orig@lbrack\[%
+    \NewCommandCopy\@gyoudori@orig@rbrack\]%
+    \DeclareRobustCommand\[{\@gyoudori@math@begin\@gyoudori@orig@lbrack}%
+    \DeclareRobustCommand\]{\@gyoudori@orig@rbrack\@gyoudori@math@end}}}
+
 \ifgyoudori@displaymath
-  \@gyoudori@math@hook{eqnarray}
-  \@gyoudori@math@hook{eqnarray*}
-  \@gyoudori@math@hook{align}
-  \@gyoudori@math@hook{align*}
-  \@gyoudori@math@hook{gather}
-  \@gyoudori@math@hook{gather*}
+  \@for\@tempa:=equation,equation*,eqnarray,eqnarray*,align,align*,%
+      gather,gather*,multline,multline*,flalign,flalign*,alignat,alignat*\do
+    {\expandafter\@gyoudori@math@hook\expandafter{\@tempa}}
+  \AtBeginDocument{\@gyoudori@math@brackets}
 \fi
 
 %% フロートの行取り（float=true）
@@ -221,7 +342,7 @@
 % 置き場所が決まったら，同じ高さのまま中身を上なら[t]，下なら[b]，ここなら中央に
 % 組み直し，領域が本文の行の字の枠にそろうようにずらす．
 % アキは「行送りの整数倍に行間を加えた長さ」に丸めるので，フロートの前後で本文の行送りは
-% ずれない．フロートだけのページは対象外．
+% ずれない．フロートだけのページ（段）では，フロートを上寄せにして行の位置にそろえる．
 
 % 行間：行送りから「あ」の高さと深さを減じた長さ
 \def\@gyoudori@linegap{%
@@ -241,7 +362,15 @@
   \@gyoudori@roundsep\dbltextfloatsep
   % ここのフロートは上下に\intextsepが入るので，行間を半分ずつ割り振る
   \@gyoudori@roundsep\intextsep
-  \advance\intextsep-.5\@gyoudori@linegap}
+  \advance\intextsep-.5\@gyoudori@linegap
+  % フロートだけのページ（段）：最初のフロートの領域の上端を本文1行目の字の枠の上端に
+  % そろえ（上寄せ），フロートの間のアキを丸める．余りは下に置く
+  \@gyoudori@fppage\@fptop\@fpsep\@fpbot
+  \@gyoudori@fppage\@dblfptop\@dblfpsep\@dblfpbot}
+\def\@gyoudori@fppage#1#2#3{%
+  #1\dimexpr\topskip-\@gyoudori@ht\relax
+  \@gyoudori@roundsep#2%
+  #3\z@\@plus1fil\relax}
 
 % \end{figure}など：フロートのボックスを行取り領域の高さにする（中身は[t]）
 \def\@gyoudori@float@box{%
@@ -278,15 +407,14 @@
   \edef\@gyoudori@floatshift{\the\dimexpr\topskip-\@gyoudori@ht\relax}}
 
 % \@tempdimb = 段#1の最後の行の深さ．段の箱の深さは\maxdepthで打ち切られている
-% ことがあるので，最後の箱を取り出してその深さを使う．最後の箱が行取りの領域なら，
-% その深さは「行送りの整数倍に「あ」の深さを加えた長さ」なので，行送りで割った余りをとる
+% ことがあるので，最後の箱を取り出してその深さを使う（行取りの領域の最後は深さが
+% 「あ」の深さの空の箱）
 \def\@gyoudori@lastdepth#1{%
   \setbox\z@\vbox{%
     \unvcopy#1%
     \global\@tempdimb\dp#1%
     \ifnum\lastnodetype=\@ne \setbox\z@\lastbox \global\@tempdimb\dp\z@ \fi
-    \ifnum\lastnodetype=\tw@ \setbox\z@\lastbox \global\@tempdimb\dp\z@ \fi}%
-  \@whiledim\@tempdimb>\@gyoudori@bs\do{\advance\@tempdimb-\@gyoudori@bs}}
+    \ifnum\lastnodetype=\tw@ \setbox\z@\lastbox \global\@tempdimb\dp\z@ \fi}}
 
 % 本文の直後に置く下のフロート：[b]．本文の最終行の実際の深さ#1を「あ」の深さと
 % みなしてそろえる
@@ -392,14 +520,10 @@
 % 段の先頭に来ると前のアキが捨てられて位置がずれるので，直前では改段させない
 % （\if@nobreakが真だと，カーネルは\interlinepenaltyの代わりに\nobreakを入れる．
 % ここに置けなかったときはもとに戻す）
-\newdimen\@gyoudori@pd
 \def\@gyoudori@addtocurcol{%
   \@gyoudori@metrics
-  % 直前の行の深さ（行取りの領域なら，行送りで割った余り）
-  \@gyoudori@pd\@pagedp
-  \@whiledim\@gyoudori@pd>\@gyoudori@bs\do{\advance\@gyoudori@pd-\@gyoudori@bs}%
   \@gyoudori@float@set\@currbox{c}%
-    {\dimexpr\@gyoudori@linegap/2+\@gyoudori@dp-\@gyoudori@pd\relax}%
+    {\dimexpr\@gyoudori@linegap/2+\@gyoudori@dp-\@pagedp\relax}%
   \if@nobreak
     \def\@gyoudori@restore@nobreak{\@nobreaktrue}%
   \else
@@ -467,6 +591,18 @@
     \global\@gyoudori@leftdepth\dp\@gyoudori@floatbody
   \fi}
 
+% 縦のリストの末尾からグルー・カーン・ペナルティと箱を取り除いていき，最後に取り除いた
+% 箱（リストの先頭の箱）を\@gyoudori@floatbodyに得る．ほかの種類の要素で止まる
+\def\@gyoudori@firstbox{%
+  \ifnum\lastnodetype>10 \ifnum\lastnodetype<14
+    \unskip\unkern\unpenalty
+    \expandafter\expandafter\expandafter\@gyoudori@firstbox
+  \fi\fi
+  \ifnum\lastnodetype>\z@ \ifnum\lastnodetype<\thr@@
+    \global\setbox\@gyoudori@floatbody\lastbox
+    \expandafter\expandafter\expandafter\@gyoudori@firstbox
+  \fi\fi}
+
 % flushendが左右の段をつなぐところ（\atColsBreakの位置）：つなぎ目の間隔を
 % 行送りの整数倍に切り上げる．flushendはつなぎ目に「右段の先頭で捨てられた
 % グルー」を入れるが，段の切れ目がフロートの処理と重なると，それが行間の
@@ -481,8 +617,10 @@
       \setbox\z@\vbox{\unvcopy\@outputbox}%
       \splittopskip\z@ \splitmaxdepth\maxdimen \vbadness\@M \vfuzz\maxdimen
       \setbox\tw@\vsplit\z@ to\z@
-      \setbox\tw@\vbox{\unvbox\tw@\unskip\unpenalty
-        \global\setbox\@gyoudori@floatbody\lastbox}%
+      % 切り出した部分は，行取りの領域なら箱・カーン・空の箱の3つになるので，
+      % 末尾から取り除いていき，先頭の箱を得る
+      \global\setbox\@gyoudori@floatbody\box\voidb@x
+      \setbox\tw@\vbox{\unvbox\tw@\@gyoudori@firstbox}%
     \endgroup
     % \oldbreak@skip：flushendがつなぎ目に入れたグルー
     \@tempdima\dimexpr\@gyoudori@leftdepth+\oldbreak@skip\relax
@@ -543,6 +681,18 @@
   \let\@comdblflelt\@gyoudori@comdblflelt
   \let\@gyoudori@orig@addtocurcol\@addtocurcol
   \let\@addtocurcol\@gyoudori@addtocurcol
+  % フロートだけのページ（段）：ここのフロートとして試したときの組み方が残っているので，
+  % 上寄せに組み直してから積む
+  \let\@gyoudori@orig@wtryfc\@wtryfc
+  \def\@wtryfc##1{\@gyoudori@float@set##1{t}\z@\@gyoudori@orig@wtryfc##1}
+  % フロートだけのページ（段）に収まるかの判定で，LaTeXは\@fptopを数えないので，
+  % 判定のときだけ段の高さから差し引く．\@xtryfcは，ページが組めると残りの候補の判定を
+  % 止めるために\@eltを局所的に\@gobbleにするので，グループを出た後でし直す
+  \let\@gyoudori@orig@xtryfc\@xtryfc
+  \def\@xtryfc##1{\begingroup
+    \advance\@colht-\@fptop\relax
+    \@gyoudori@orig@xtryfc##1\endgroup
+    \if@fcolmade\let\@elt\@gobble\fi}
   % 脚注を下のフロートより先に積むカーネル（pLaTeXは独自の\@makecolを使う）
   \@ifundefined{pltx@adjust@wd@outputbox}{%
     \@ifundefined{@outputbox@appendfootnotes}{}{%

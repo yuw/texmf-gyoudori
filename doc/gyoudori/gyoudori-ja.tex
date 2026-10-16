@@ -25,7 +25,7 @@
 
 \title{\pkg{gyoudori}パッケージ\\[.5ex]\large 行取り（行ドリ）の実現}
 \author{木枝祐介}
-\date{2026年10月16日\quad v20261016.0}
+\date{2026年10月16日\quad v20261016.1}
 
 \begin{document}
 \maketitle
@@ -157,10 +157,20 @@ JLREQの行間（行送り$-$文字サイズ）と一致する．pLaTeXの標準
 <内容>
 \end{gyoudori}
 \end{verbatim}
-\meta{内容}を\meta{行数}行取りする．\meta{オプション}には，位置と\opt{local}を
-カンマで区切って指定する．位置は\opt{t}（上寄せ），\opt{c}（中央．既定），\opt{b}
-（下寄せ）のいずれかである．\meta{内容}は垂直モードで組まれるので，複数行や文字
-サイズの変更を含められる．
+\meta{内容}を\meta{行数}行取りする．\meta{行数}は1以上の整数で，そうでなければ
+エラーになる．\meta{オプション}には，次のものをカンマで区切って指定する．
+\begin{description}
+\item[位置] \opt{t}（上寄せ），\opt{c}（中央．既定），\opt{b}（下寄せ）のいずれか．
+\item[\opt{local}] 基準をその場の文字サイズにする（下記）．
+\item[\opt{indent}，\opt{noindent}] \meta{内容}の段落を字下げする，しない．既定は
+  パッケージオプション\opt{indent}による（\ref{sec:indent}\nobreak 節．既定は字下げしない）．
+\end{description}
+\meta{内容}は垂直モードで組まれるので，複数行や文字サイズの変更を含められる．
+\meta{内容}は字の枠で位置を決める．1行目のベースラインの上に\meta{内容}の最後の文字
+サイズの「あ」の高さ，最後の行のベースラインの下に「あ」の深さをとった範囲を，領域の
+中で位置の指定に従って置く．このため，欧文だけの見出しも，和文の見出しと同じ位置に
+置かれる．\meta{内容}の字面が領域の外側の行間に半分を超えてはみ出すときは，警告を
+出す（パッケージオプション\opt{overflow}でエラーにできる．\ref{sec:overflow}\nobreak 節）．
 
 \opt{local}をつけると，\cs{normalsize}の行送りではなく，その場の文字サイズの「あ」の
 高さ・深さと\cs{baselineskip}を基準に行取りする．\cs{small}などに切り替えた部分の
@@ -270,11 +280,25 @@ $n$行取りの次の行は，$n+1$行目から始まる．ディスプレイ数
 \usepackage[displaymath,float,textfloatsep=2\baselineskip]{gyoudori}
 \end{verbatim}
 
+\subsection{\opt{overflow=warning|error}}\label{sec:overflow}
+
+\env{gyoudori}環境・\cs{gyoudoriarea}の\meta{内容}が領域に収まらないとき（字面が
+領域の外側の行間に半分を超えてはみ出すとき）に，警告を出すか（\opt{warning}．既定），
+エラーにするか（\opt{error}）を指定する．行数は自動では増やさない．
+
+\subsection{\opt{indent=true|false}}\label{sec:indent}
+
+\env{gyoudori}環境・\cs{gyoudoriarea}の\meta{内容}の段落を字下げするかを指定する．
+既定は\opt{false}（字下げしない）である．環境ごとに\opt{indent}，\opt{noindent}で
+変えられる（\ref{sec:env}\nobreak 節）．
+
 \subsection{\opt{displaymath=true|false}}\label{sec:displaymath}
 
 ディスプレイ数式を自動的に行取りする．既定は\opt{false}である．
-対象は\env{eqnarray}，\env{align}，\env{gather}と，それぞれの\env{*}つきである
-（\env{align}と\env{gather}は\pkg{amsmath}が必要）．数式は，その1行目と最後の行の
+対象は\env{equation}，\env{eqnarray}，\cs{[}と\cs{]}で囲む数式（\env{displaymath}環境）と，
+\pkg{amsmath}の\env{equation*}，\env{align}，\env{gather}，\env{multline}，
+\env{flalign}，\env{alignat}，およびそれぞれの\env{*}つきである．
+\verb|$$|で囲む数式は対象外である．数式は，その1行目と最後の行の
 ベースラインの中点を，領域の1行目と最後の行のベースラインの中点に合わせて置く．
 1行の式を奇数行取りにすると，式のベースラインが中央の行のベースラインにのる．
 行数は，この位置で数式が収まる最少の行数（2行以上）である．数式は領域の外側の行間に
@@ -358,6 +382,11 @@ $n$行取りの次の行は，$n+1$行目から始まる．ディスプレイ数
   指定値以上で最小の値に丸め，伸縮をなくす．\cs{intextsep}はフロートの上下に
   入るので，行間を半分ずつ割り振った値になる．
 \end{itemize}
+\begin{itemize}
+\item フロートだけのページ（段）では，フロートを上寄せにし，最初のフロートの領域の
+  上端を本文1行目の字の枠の上端にそろえる．フロートの間のアキ（\cs{@fpsep}）も
+  同じように丸める．
+\end{itemize}
 これにより，フロートの前後で本文の行は行の位置からずれない．
 \LaTeX{}は\opt{[h]}だけの指定を\opt{[ht]}に変える．その場に置けずに上に回った
 フロートは上寄せで組み直される．ここのフロートの直前では改段しない．
@@ -425,14 +454,23 @@ $A(n)=(n-1)b+h+d$：$n$行取りの領域の高さ．
 
 \subsection{行取りの領域の置き方}\label{sec:place}
 
-内容を高さ$A(n)$の\cs{vbox}に組み，位置に応じて\cs{vss}を前後に置く
-（\opt{t}は後ろ，\opt{c}は前後，\opt{b}は前）．この箱の高さを$h$に，深さを
-$A(n)-h$につけ替え，段落を閉じてから置く．\TeX{}は直前の行のベースラインから$b$の
-位置に箱のベースライン（領域の1行目のベースライン）が来るように\cs{baselineskip}の
-グルーを入れる．置いた後に\cs{prevdepth}を$d$にするので，次の行は領域の最後の行の
-ベースラインから$b$の位置，つまり$n+1$行目に来る．ページ（段）の先頭では，
-\cs{topskip}によって領域の上端が1行目の字の枠の上端につく．この置き方は
-阿部紀行氏の方法による（\url{https://abenori.blogspot.com/2017/12/gyodori.html}）．
+内容を高さ$A(n)$の\cs{vbox}に組み，その高さを$h$に，深さを0につけ替える（中身は
+下にはみ出して描かれる）．段落を閉じてから，この箱，行送りの$n-1$倍のカーン，
+高さ0・深さ$d$の空の箱を続けて置く．\TeX{}は直前の行のベースラインから$b$の位置に
+箱のベースライン（領域の1行目のベースライン）が来るように\cs{baselineskip}の
+グルーを入れる．空の箱が領域の最後の行にあたるので，次の行はそのベースラインから
+$b$の位置，つまり$n+1$行目に来る．ページ（段）の先頭では，\cs{topskip}によって
+領域の上端が1行目の字の枠の上端につく．3つの要素の間では改ページできず，
+ページ分割の上では$n$行の本文の行と同じに扱われる．この置き方は，阿部紀行氏の方法
+（\url{https://abenori.blogspot.com/2017/12/gyodori.html}）をもとにしている．
+阿部氏の方法は領域を深さの大きい1つの箱で表すが，深さが\cs{maxdepth}を超える箱は
+ページ分割で最終行の下にはみ出すことがあるので，3つに分けた．
+
+\env{gyoudori}環境と\cs{gyoudoriarea}では，\meta{内容}の箱の先頭に\cs{penalty}$-10000$を
+置き，ディスプレイ数式と同じ方法（\ref{sec:math}\nobreak 節）で1行目と最後の行の
+ベースラインの距離$\Delta$を求める．\meta{内容}の最後の文字サイズの「あ」の高さ・深さを
+$h_c$，$d_c$とし，字の枠の範囲（高さ$\Delta+h_c+d_c$）を位置に応じて領域の上端・中央・
+下端にそろえる．
 \opt{local}をつけたときは，$h$，$d$，$b$にその場の「あ」の高さ・深さと\cs{baselineskip}を
 使う．
 
@@ -472,19 +510,24 @@ $h$，$d$，$b$には，その場の「あ」の高さ・深さと\cs{baselinesk
 \item[上のフロート（\cs{@cflt}）] $p=\opt{t}$，$\delta=\cs{topskip}-h$．領域の上端が
   本文1行目の字の枠の上端に来る．
 \item[下のフロート（\cs{@cflb}）] $p=\opt{b}$，$\delta=d-d_{\mathrm{last}}$．
-  $d_{\mathrm{last}}$は段の最後の箱の深さを$b$で割った余りである（最後の箱が行取りの
-  領域なら$d$になる）．フロートの並びの末尾には，高さ0・深さ$d$の空の行と，
+  $d_{\mathrm{last}}$は段の最後の箱の深さである（段の箱の深さは\cs{maxdepth}で
+  打ち切られていることがあるので，最後の箱を取り出して測る）．フロートの並びの末尾には，高さ0・深さ$d$の空の行と，
   「$r-d$」のグルーを置く．$r$は「段の高さ$-\cs{topskip}$」を$b$で割った余りである．
   こうすると，\cs{clearpage}の\cs{vfil}で押し下げられたときも並びの下端が段に入る
   最終行の字の枠の下端にそろい，字の枠の下端が版面からはみ出すクラスでも
   Overfullにならない．押し下げられた場合（段の末尾がグルー）は$\delta=0$とし，
   \cs{@textbottom}の伸びを打ち消す．
 \item[ここのフロート（\cs{@addtocurcol}）] $p=\opt{c}$，
-  $\delta=g/2+d-d_{\mathrm{prev}}$．$d_{\mathrm{prev}}$は直前の行の深さを$b$で割った
-  余りである．フロートの直前には\cs{nobreak}を入れさせ，段の先頭に来ないようにする．
+  $\delta=g/2+d-d_{\mathrm{prev}}$．$d_{\mathrm{prev}}$は直前の行の深さ（\cs{@pagedp}）
+  である．フロートの直前には\cs{nobreak}を入れさせ，段の先頭に来ないようにする．
 \item[アキの丸め] 各アキを，$g+kb$（$k$は0以上の整数）のうち指定値以上で最小の値に
   し，伸縮をなくす．\cs{intextsep}はフロートの上下に入るので$g/2+kb$とする．
   こうすると「フロートの領域$+$アキ」が行送りの整数倍になり，本文の行がずれない．
+\item[フロートだけのページ] \cs{@fptop}を$\cs{topskip}-h$（伸縮なし）にし，
+  \cs{@fpsep}をほかのアキと同じく丸め，\cs{@fpbot}に伸びを残す．フロートを積む
+  \cs{@wtryfc}で中身を上寄せに組み直す（ここのフロートとして試したときの組み方が
+  残っているため）．収まるかの判定（\cs{@xtryfc}）は\cs{@fptop}を数えないので，判定の
+  間だけ段の高さから差し引く．段抜きのフロートだけのページも同じである．
 \item[脚注の積み順] pLaTeXの\cs{@makecol}はフロートの後に脚注を積むので，$r$を
   求めるときに脚注の高さを段の高さから引く．\LaTeX{} 2025-06-01以降の
   \cs{@makecol}（LuaLaTeXなど）は脚注の後にフロートを積むので，下のフロートがある
@@ -516,7 +559,6 @@ $h$，$d$，$b$には，その場の「あ」の高さ・深さと\cs{baselinesk
   \cs{gyoudoriarea}も，\opt{local}をつけなければ同じである（\ref{sec:env}\nobreak 節）．
 \item 箇条書きの\cs{topsep}，\cs{itemsep}，\cs{parsep}は行送りの整数倍ではないので，
   箇条書きの中や前後では行の位置がずれる．
-\item フロートだけのページや段は対象外である．
 \item 縦組は考慮していない．ただし試した範囲（pLaTeXの\pkg{tarticle}と\pkg{jlreq}の
   \opt{tate}，LuaLaTeXの\pkg{ltjtarticle}）では，\env{gyoudori}環境，ディスプレイ数式，
   フロートの行取りは横組と同じように働き，前後の本文の行は行のグリッドにのる．
@@ -529,13 +571,10 @@ $h$，$d$，$b$には，その場の「あ」の高さ・深さと\cs{baselinesk
   重なると，本文が1\,pt前後ずれることがある．
 \item \pkg{stfloats}の\cs{fnbelowfloat}は，pLaTeXでは効かない（pLaTeXは独自の
   \cs{@makecol}を使うため）．
-\item 版面の高さが行の位置に合っていないクラス（pLaTeXの\pkg{jarticle}など）では，
-  最終行の下に余りがあるので，ディスプレイ数式の行取りの領域が最終行より下に1行まで
-  はみ出すことがある．\env{gyoudori}環境と\cs{gyoudoriarea}は，直後で改ページしない
-  ので，はみ出さずに次のページ（段）に送られる．
+\item \verb|$$|で囲んだディスプレイ数式は行取りしない．
 \item 既知の未対応事項：\pkg{nidanfloat}と\opt{displaymath}を一緒に使うと，本文の行が
-  行の位置からずれることがある．\pkg{nidanfloat}が左段からあふれた本文を右段に
-  つなぐ処理と，行取りの領域の箱の大きな深さが干渉しているとみている．
+  行の位置からずれることがある．原因はまだ特定できていない（領域の箱の深さによる
+  ものではないことは確かめた）．
 \end{itemize}
 
 \section{参考文献}
