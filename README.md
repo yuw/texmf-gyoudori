@@ -39,6 +39,8 @@ cases where one has to typeset under such a specification.
 - Option `displaymath`: display math (`eqnarray`, `align`, `gather` and their
   starred forms) is centered by its baselines in the smallest area of at least
   two lines (a one-row display in an odd-line area sits on the middle line).
+  It follows the current font size and `\baselineskip`, so displays in
+  footnotes or in parts set in `\small` stay on the surrounding line pitch.
 - Option `float`: floats are put into the smallest gyou-dori area and aligned to
   the line grid; the float separations are rounded to whole lines.
   Works with nidanfloat, stfloats, flushend and evenend.

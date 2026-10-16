@@ -98,8 +98,9 @@ other than centering (Section~\ref{sec:pos}).
 The line pitch is \cs{normalbaselineskip}, and the height of the character
 frame is the height plus depth of the hiragana ``あ'' (the JFM metrics), both taken
 at \cs{normalsize}. Even inside \cs{small} etc., the grid of the main text is
-used (except with \opt{local} for the \env{gyoudori} environment and
-\cs{gyoudoriarea}; Section~\ref{sec:env}).
+used (except for display math, and for the \env{gyoudori} environment and
+\cs{gyoudoriarea} with \opt{local}; Sections~\ref{sec:env} and
+\ref{sec:displaymath}).
 
 The height of the character frame depends on the JFM. With the standard JFMs of
 upLaTeX and LuaTeX-ja (including \pkg{jlreq}) it equals the full-width size (a
@@ -309,7 +310,7 @@ Options are given as key-value pairs. For a Boolean option, the key alone means
 \usepackage[displaymath,float,textfloatsep=2\baselineskip]{gyoudori}
 \end{verbatim}
 
-\subsection{\opt{displaymath=true|false}}
+\subsection{\opt{displaymath=true|false}}\label{sec:displaymath}
 
 Display math is placed by gyou-dori automatically. The default is \opt{false}.
 The environments \env{eqnarray}, \env{align} and \env{gather} and their starred
@@ -323,6 +324,11 @@ the outer line gaps by up to half of them, so that at least half of the line gap
 remains to the character frames of the adjacent lines.
 \cs{abovedisplayskip} and the like are not used. Equation numbers, \cs{label}
 and \cs{eqref} work as they do without this option.
+
+The gyou-dori is based on the height and depth of ``あ'' in the current font size
+and on \cs{baselineskip}. In the main text at \cs{normalsize} this is the same
+as the line pitch of \cs{normalsize}; inside footnotes, or answers set in
+\cs{small} and the like, the display follows the surrounding line pitch.
 
 \begin{demo}
 \GyBands{8}A line of text. The following display is placed by gyou-dori.
@@ -369,6 +375,21 @@ The last line of text.
 \end{demo}
 
 In this example, the displays take two, four and three lines, and the text after each of them starts on a band.
+
+The next example is inside a part set in \cs{small}. The gray bands show the
+line positions of \cs{small}.
+
+\begin{demo}
+\small\GyBands[local]{6}A line of an answer set in \cs{small}.
+\begin{gather*}
+  \int_0^1 x^2\,dx = \frac{1}{3}
+\end{gather*}
+The following line is also on the line positions of \cs{small}.
+\begin{gather*}
+  x = y
+\end{gather*}
+The last line.
+\end{demo}
 
 \subsection{\opt{float=true|false}}\label{sec:float}
 
@@ -484,6 +505,8 @@ zero for the next paragraph unless a blank line follows.
 
 \subsection{Display math}\label{sec:math}
 
+The height and depth of ``あ'' in the current font size and \cs{baselineskip}
+are used for $h$, $d$ and $b$.
 \begin{enumerate}
 \item With the environment hooks (\texttt{env/<name>/before} and \texttt{after}),
   a \cs{vbox} is opened outside the environment, and the display is set in it
@@ -567,11 +590,9 @@ zero for the next paragraph unless a blank line follows.
 \section{Limitations}
 
 \begin{itemize}
-\item Gyou-dori of display math and floats is based on the line pitch of
-  \cs{normalsize}; inside \cs{small} etc.\ the lines do not match the
-  surrounding text. The \env{gyoudori} environment and \cs{gyoudoriarea} keep
-  the surrounding lines on their grid with \opt{local}
-  (Section~\ref{sec:env}).
+\item Gyou-dori of floats is based on the line pitch of \cs{normalsize}. So is
+  that of the \env{gyoudori} environment and \cs{gyoudoriarea} without
+  \opt{local} (Section~\ref{sec:env}).
 \item \cs{topsep}, \cs{itemsep} and \cs{parsep} of lists are not multiples of
   the line pitch, so lines in and around lists are off the grid.
 \item Float-only pages and columns are not handled.

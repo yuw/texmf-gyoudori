@@ -152,7 +152,8 @@
 % ベースラインの中点に合わせる（1行の式を奇数行取りにすると，式のベースラインが
 % 中央の行のベースラインにのる）．行数は，この位置で数式の箱が収まる最少の行数
 % （2行以上）とする．箱は，領域の外側の行間に半分まではみ出してよい（隣の行の字の
-% 枠との間には行間の半分以上が空く）．
+% 枠との間には行間の半分以上が空く）．基準はその場の文字サイズの「あ」の高さ・深さと
+% \baselineskipなので，脚注や\smallの中でもまわりの行にそろう．
 \newbox\@gyoudori@mathbox
 \newdimen\@gyoudori@mathbase % 数式の1行目から最後の行までのベースラインの距離
 \newdimen\@gyoudori@mathoff  % 領域の上端から数式の箱の上端まで
@@ -170,7 +171,10 @@
     \par
     \unskip\unpenalty\unskip\unpenalty % \belowdisplayskipと\postdisplaypenaltyを除く
   \egroup
-  \@gyoudori@metrics
+  % 基準はその場の文字サイズと\baselineskip（脚注や\smallの中でもまわりの行にそろう．
+  % \normalsizeの本文では\normalsizeの基準と同じ）
+  \let\@gyoudori@getmetrics\@gyoudori@metrics@local
+  \@gyoudori@getmetrics
   % 先頭の区切りで\vsplitすると，残りの先頭に「\splittopskipから1行目の高さを
   % 減じた長さ」のグルーが入るので，残りの高さから1行目と最後の行のベースラインの距離がわかる
   \begingroup
@@ -194,6 +198,7 @@
   \if@tempswa\repeat
   \@gyoudori@place{t}{\@gyoudori@lines}%
     {\kern\@gyoudori@mathoff\box\@gyoudori@mathbox}%
+  \let\@gyoudori@getmetrics\@gyoudori@metrics
   \@gyoudori@doendpe}
 
 % 環境のグループの外側（before/after）にフックする．align*は内部で\endalignを
