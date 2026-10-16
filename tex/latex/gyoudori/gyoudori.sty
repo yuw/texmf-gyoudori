@@ -65,6 +65,11 @@
 % \@gyoudori@placeが使う基準．gyoudori環境と\gyoudoriareaのlocalで切り替える
 \let\@gyoudori@getmetrics\@gyoudori@metrics
 
+% 版面（段）の上端から本文1行目のベースラインまで．TeXは1行目の高さ（「あ」の高さ）が
+% \topskipより大きいとき，1行目のベースラインを行の高さの位置に置くので，大きいほうをとる
+\def\@gyoudori@firstbase{%
+  \ifdim\topskip<\@gyoudori@ht\@gyoudori@ht\else\topskip\fi}
+
 % #1行取りの領域の高さ：行送りに#1から1を減じた数を掛け，「あ」の高さと深さを加えた長さ
 \def\@gyoudori@areaheight#1{%
   \dimexpr\@gyoudori@bs*(#1-1)+\@gyoudori@ht+\@gyoudori@dp\relax}
@@ -339,7 +344,7 @@
 
 %% フロートの行取り（float=true）
 % フロートは，それが収まる最少の行取り領域（1行以上）のボックスにする．
-% 置き場所が決まったら，同じ高さのまま中身を上なら[t]，下なら[b]，ここなら中央に
+% 置き場所が決まったら，同じ高さのまま中身を上なら[t]，下なら[b]，本文中なら中央に
 % 組み直し，領域が本文の行の字の枠にそろうようにずらす．
 % アキは「行送りの整数倍に行間を加えた長さ」に丸めるので，フロートの前後で本文の行送りは
 % ずれない．フロートだけのページ（段）では，フロートを上寄せにして行の位置にそろえる．
@@ -360,7 +365,7 @@
   \@gyoudori@roundsep\textfloatsep
   \@gyoudori@roundsep\dblfloatsep
   \@gyoudori@roundsep\dbltextfloatsep
-  % ここのフロートは上下に\intextsepが入るので，行間を半分ずつ割り振る
+  % 本文中のフロート（[h]）は上下に\intextsepが入るので，行間を半分ずつ割り振る
   \@gyoudori@roundsep\intextsep
   \advance\intextsep-.5\@gyoudori@linegap
   % フロートだけのページ（段）：最初のフロートの領域の上端を本文1行目の字の枠の上端に
@@ -368,7 +373,7 @@
   \@gyoudori@fppage\@fptop\@fpsep\@fpbot
   \@gyoudori@fppage\@dblfptop\@dblfpsep\@dblfpbot}
 \def\@gyoudori@fppage#1#2#3{%
-  #1\dimexpr\topskip-\@gyoudori@ht\relax
+  #1\dimexpr\@gyoudori@firstbase-\@gyoudori@ht\relax
   \@gyoudori@roundsep#2%
   #3\z@\@plus1fil\relax}
 
@@ -400,11 +405,12 @@
 \def\@gyoudori@floatpos{t}
 \def\@gyoudori@floatshift{\z@}
 
-% 上のフロート：[t]．本文1行目の字の枠の上端（\topskipから「あ」の高さを減じた位置）にそろえる
+% 上のフロート：[t]．本文1行目の字の枠の上端（1行目のベースラインから「あ」の高さだけ上）に
+% そろえる
 \def\@gyoudori@floattop{%
   \@gyoudori@metrics
   \def\@gyoudori@floatpos{t}%
-  \edef\@gyoudori@floatshift{\the\dimexpr\topskip-\@gyoudori@ht\relax}}
+  \edef\@gyoudori@floatshift{\the\dimexpr\@gyoudori@firstbase-\@gyoudori@ht\relax}}
 
 % \@tempdimb = 段#1の最後の行の深さ．段の箱の深さは\maxdepthで打ち切られている
 % ことがあるので，最後の箱を取り出してその深さを使う（行取りの領域の最後は深さが
@@ -424,8 +430,9 @@
   \edef\@gyoudori@floatshift{\the\dimexpr\@gyoudori@dp-#1\relax}}
 
 % \@tempdima = 高さ#1の版面（段）に入る最終行のベースラインから，その下端までの余り
+% （1行目のベースラインは\@gyoudori@firstbase，以降は行送りごと）
 \def\@gyoudori@lastlinegap#1{%
-  \@tempdima\dimexpr#1-\topskip\relax
+  \@tempdima\dimexpr#1-\@gyoudori@firstbase\relax
   \@tempcnta\@tempdima
   \@tempcntb\@gyoudori@bs
   \divide\@tempcnta\@tempcntb
@@ -515,11 +522,11 @@
   \@gyoudori@float@set#1\@gyoudori@floatpos\@gyoudori@floatshift
   \@gyoudori@orig@comdblflelt#1}
 
-% ここのフロート：中央．直前の行の深さ\@pagedpを「あ」の深さとみなしてそろえる
-% （ここに置けずに上か下に回ったときは，そこで改めて組み直される）
+% 本文中のフロート（[h]）：中央．直前の行の深さ\@pagedpを「あ」の深さとみなしてそろえる
+% （本文中に置けずに上か下に回ったときは，そこで改めて組み直される）
 % 段の先頭に来ると前のアキが捨てられて位置がずれるので，直前では改段させない
 % （\if@nobreakが真だと，カーネルは\interlinepenaltyの代わりに\nobreakを入れる．
-% ここに置けなかったときはもとに戻す）
+% 本文中に置けなかったときはもとに戻す）
 \def\@gyoudori@addtocurcol{%
   \@gyoudori@metrics
   \@gyoudori@float@set\@currbox{c}%
@@ -681,7 +688,7 @@
   \let\@comdblflelt\@gyoudori@comdblflelt
   \let\@gyoudori@orig@addtocurcol\@addtocurcol
   \let\@addtocurcol\@gyoudori@addtocurcol
-  % フロートだけのページ（段）：ここのフロートとして試したときの組み方が残っているので，
+  % フロートだけのページ（段）：本文中のフロートとして試したときの組み方が残っているので，
   % 上寄せに組み直してから積む
   \let\@gyoudori@orig@wtryfc\@wtryfc
   \def\@wtryfc##1{\@gyoudori@float@set##1{t}\z@\@gyoudori@orig@wtryfc##1}

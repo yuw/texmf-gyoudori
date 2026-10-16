@@ -383,8 +383,8 @@ In this example, the \env{align} is centered in a 3-line area and the
 \env{gather*} in a 2-line area, and the text before and after them stays on the
 grid. Since \env{align} and \env{gather} of \pkg{amsmath} insert \cs{strut} in
 every row, the number of lines of a two-row \env{align} depends on the line
-pitch of the class (three lines with \pkg{jlreq} used for this manual, two lines
-with \pkg{jsarticle}).
+pitch of the class (for example, three lines with \pkg{jlreq} used for this
+manual, and two lines with \pkg{jsarticle}).
 
 Larger displays with fractions, integrals and sums are also placed in the smallest area that holds them.
 
@@ -428,21 +428,22 @@ The last line.
 
 \subsection{\opt{float=true|false}}\label{sec:float}
 
-Floats are placed by gyou-dori. The default is \opt{false}.
+Floats are placed by gyou-dori. The default is \opt{false}. Below, a float
+placed at the top of a page (column) is called a \emph{top float}, one at the
+bottom a \emph{bottom float}, and one placed in the middle of the text (the
+\opt{h} placement) an \emph{in-text float}.
 \begin{itemize}
 \item A float is put into the smallest gyou-dori area (at least one line) that
   holds it.
-\item When its place is decided, the float is aligned in the area: at the top
-  of a page, to the top, with the top of the area on the top of the character
-  frame of the first line; at the bottom, to the bottom, with the bottom of the
-  area on the bottom of the character frame of a line; and here (\opt{h}), to the
-  center, aligned with the lines before and after it.
+\item When its place is decided, the float is aligned in the area: a top float
+  to the top, with the top of the area on the top of the character frame of the
+  first line; a bottom float to the bottom, with the bottom of the area on the
+  bottom of the character frame of a line; and an in-text float to the center,
+  aligned with the lines before and after it.
 \item The five float separations (\cs{floatsep} etc.; see below) are rounded up
   to the smallest value of the form ``line gap $+$ a multiple of the line
   pitch'' that is not less than the given value, without stretch or shrink.
   \cs{intextsep}, which is used both above and below, takes half of the line gap.
-\end{itemize}
-\begin{itemize}
 \item On a float-only page (column), the floats are aligned to the top, with the
   top of the area of the first float on the top of the character frame of the
   first line of text; the separation between floats (\cs{@fpsep}) is rounded
@@ -450,7 +451,7 @@ Floats are placed by gyou-dori. The default is \opt{false}.
 \end{itemize}
 Thus the text lines around floats stay on the grid. \LaTeX{} changes a lone
 \opt{[h]} into \opt{[ht]}; a float that goes to the top instead is realigned to
-the top. No column break is allowed right before a float placed here.
+the top. No column break is allowed right before an in-text float.
 
 \subsection{\opt{floatsep}, \opt{textfloatsep}, \opt{intextsep},
   \opt{dblfloatsep}, \opt{dbltextfloatsep}}
@@ -521,7 +522,23 @@ in JLREQ.
 $b$: the line pitch (\cs{normalbaselineskip} at \cs{normalsize});
 $h$, $d$: the height and depth of ``あ'' at \cs{normalsize} (the character
 frame); $g=b-h-d$: the line gap; $A(n)=(n-1)b+h+d$: the height of an $n$-line
-area.
+area; $t_1$: the distance from the top of the type area (column) to the baseline
+of the first line of text (the larger of \cs{topskip} and $h$; \TeX{} puts the
+baseline at the height of the first line if it is larger than \cs{topskip}).
+
+No settings of a particular class are assumed. The only assumptions about the
+class are:
+\begin{itemize}
+\item \cs{normalsize} sets \cs{normalbaselineskip} to the line pitch of the main
+  text (as usual definitions with \cs{fontsize} or \cs{@setfontsize} do);
+\item lines of the main text have the height and depth of ``あ'' (the character
+  frame of the JFM);
+\item \cs{parskip} between paragraphs of the main text is zero (otherwise lines
+  are shifted at every paragraph regardless of this package).
+\end{itemize}
+The text height (\cs{textheight}) need not be a multiple of the line pitch.
+\cs{topskip}, \cs{maxdepth} and the float separations of the class are used as
+they are (the separations are rounded).
 
 \subsection{Placing a gyou-dori area}\label{sec:place}
 
@@ -534,12 +551,12 @@ $b$ from the previous baseline. The empty box stands for the last line of the
 area, so the next line is at distance $b$ from its baseline, i.e.\ on line $n+1$.
 At the top of a page (column), \cs{topskip} puts the top of the area on the top
 of the character frame of the first line. No page break is possible among the
-three items, and the page builder treats them like $n$ lines of text. This is
-based on the method of Noriyuki Abe
-(\url{https://abenori.blogspot.com/2017/12/gyodori.html}), which represents the
-area by a single box of large depth; it was split into three items because a
-box whose depth exceeds \cs{maxdepth} may extend below the last line at a page
-break.
+three items, and the page builder treats them like $n$ lines of text. This
+method is an improvement on the algorithm of Noriyuki Abe
+(\url{https://abenori.blogspot.com/2017/12/gyodori.html}), which it refers to.
+Abe's algorithm represents the area by a single box of large depth; it was split
+into three items because a box whose depth exceeds \cs{maxdepth} may extend below
+the last line at a page break.
 
 For the \env{gyoudori} environment and \cs{gyoudoriarea}, a \cs{penalty}$-10000$
 is put at the beginning of the box of the content, and the distance $\Delta$
@@ -591,20 +608,20 @@ are used for $h$, $d$ and $b$.
   position $p$ (\opt{t}, \opt{c}, \opt{b}) and lowered by $\delta$, keeping the outer
   dimensions (height and depth) of the box. Thus the float placement of \LaTeX{}
   is not affected, and the mark of double-column floats (depth 1\,sp) is kept.
-\item[Top floats (\cs{@cflt})] $p=\opt{t}$, $\delta=\cs{topskip}-h$; the top of the
+\item[Top floats (\cs{@cflt})] $p=\opt{t}$, $\delta=t_1-h$; the top of the
   area is on the top of the character frame of the first line.
 \item[Bottom floats (\cs{@cflb})] $p=\opt{b}$, $\delta=d-d_{\mathrm{last}}$, where
   $d_{\mathrm{last}}$ is the depth of the last box in the column (measured by
   taking out the last box, since the depth of the column box may be cut at
   \cs{maxdepth}). After the floats, an empty line of
   height 0 and depth $d$ and glue of ``$r-d$'' are added, where $r$ is ``the
-  column height $-\cs{topskip}$'' modulo $b$. Then, even when the floats are
+  column height $-t_1$'' modulo $b$. Then, even when the floats are
   pushed down by the \cs{vfil} of \cs{clearpage}, their bottom is on the bottom of
   the character frame of the last line in the column, and no overfull box occurs
   in classes where that bottom goes below the type area. When pushed down (the
   column ends with glue), $\delta=0$ and the stretch of \cs{@textbottom} is
   cancelled.
-\item[Here floats (\cs{@addtocurcol})] $p=\opt{c}$,
+\item[In-text floats (\cs{@addtocurcol})] $p=\opt{c}$,
   $\delta=g/2+d-d_{\mathrm{prev}}$, where $d_{\mathrm{prev}}$ is the depth of the
   previous line (\cs{@pagedp}). A \cs{nobreak} is inserted before the float so that
   it does not start a column.
@@ -613,10 +630,10 @@ are used for $h$, $d$ and $b$.
   without stretch or shrink; \cs{intextsep}, used above and below, is
   $g/2+kb$. Then ``float area $+$ separation'' is a multiple of $b$, and the text
   lines are not shifted.
-\item[Float-only pages] \cs{@fptop} is set to $\cs{topskip}-h$ without stretch,
+\item[Float-only pages] \cs{@fptop} is set to $t_1-h$ without stretch,
   \cs{@fpsep} is rounded like the other separations, and \cs{@fpbot} keeps its
   stretch. The floats are realigned to the top in \cs{@wtryfc}, which stacks
-  them (they keep the alignment of a trial as a here float). Since the fitting
+  them (they keep the alignment of a trial as an in-text float). Since the fitting
   test (\cs{@xtryfc}) does not count \cs{@fptop}, the column height is reduced by
   it during the test. Float-only pages of double-column floats are handled in the
   same way.
@@ -631,9 +648,10 @@ are used for $h$, $d$ and $b$.
 
 \begin{description}
 \item[Double-column floats] They are handled in \cs{@comdblflelt}. A float in
-  \cs{@dbltoplist} is at the top: $p=\opt{t}$, $\delta=\cs{topskip}-h$. Otherwise it is at the bottom
+  \cs{@dbltoplist} is at the top: $p=\opt{t}$, $\delta=t_1-h$. Otherwise it is at
+  the bottom
   (\pkg{nidanfloat}, \pkg{stfloats}): $p=\opt{b}$, $\delta=d-r$ with $r$ being
-  ``$\cs{textheight}-\cs{topskip}$'' modulo $b$, and a \cs{vfil} is put before the
+  ``$\cs{textheight}-t_1$'' modulo $b$, and a \cs{vfil} is put before the
   floats.
 \item[\pkg{nidanfloat}] Top floats of each column are handled as by \cs{@cflt}.
   \cs{L@cflb} and \cs{R@cflb} are replaced so that the bottom floats are aligned to
@@ -667,7 +685,7 @@ are used for $h$, $d$ and $b$.
   use with other packages have not been tested.
 \item \cs{flushbottom} and the \opt{[H]} placement of the \pkg{float} package
   have not been tested.
-\item When \pkg{flushend}, footnotes, and a bottom or here float on the last page
+\item When \pkg{flushend}, footnotes, and a bottom or in-text float on the last page
   come together, text may be shifted by about 1\,pt.
 \item \cs{fnbelowfloat} of \pkg{stfloats} has no effect in pLaTeX, which uses
   its own \cs{@makecol}.
