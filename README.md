@@ -1,7 +1,7 @@
 # gyoudori — gyou-dori (line-based placement) for Japanese typesetting
 
 - Author: Yuwsuke Kieda
-- Version: v20261016.1 (2026-10-16)
+- Version: v20261017.0 (2026-10-17)
 - License: MIT
 - Repository: https://github.com/yuw/texmf-gyoudori
 
