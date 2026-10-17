@@ -695,6 +695,18 @@
   % フロートだけのページ（段）に収まるかの判定で，LaTeXは\@fptopを数えないので，
   % 判定のときだけ段の高さから差し引く．\@xtryfcは，ページが組めると残りの候補の判定を
   % 止めるために\@eltを局所的に\@gobbleにするので，グループを出た後でし直す
+  % 版面より高いフロートは，LaTeXが\@largefloatcheckで版面の高さに縮める．上の判定と
+  % 合わせて\@fptopの分も縮める（でないと，いつまでも収まらないと判定されて出力が
+  % 空回りする）
+  \let\@gyoudori@orig@largefloatcheck\@largefloatcheck
+  \def\@largefloatcheck{%
+    \@gyoudori@orig@largefloatcheck
+    \ifdim\ht\@currbox>\dimexpr\textheight-\@fptop\relax
+      \@latex@warning{Float too large for page by
+        \the\dimexpr\ht\@currbox-\textheight+\@fptop\relax\space
+        (gyoudori aligns it below \string\@fptop)}%
+      \ht\@currbox\dimexpr\textheight-\@fptop\relax
+    \fi}%
   \let\@gyoudori@orig@xtryfc\@xtryfc
   \def\@xtryfc##1{\begingroup
     \advance\@colht-\@fptop\relax

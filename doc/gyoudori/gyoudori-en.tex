@@ -448,6 +448,9 @@ bottom a \emph{bottom float}, and one placed in the middle of the text (the
   top of the area of the first float on the top of the character frame of the
   first line of text; the separation between floats (\cs{@fpsep}) is rounded
   in the same way.
+\item A float taller than the text height is shrunk with a warning, as in
+  \LaTeX{}. To align its top with the lines, it is shrunk a little more than
+  in \LaTeX{} (by \cs{@fptop}; Section~\ref{sec:float-impl}).
 \end{itemize}
 Thus the text lines around floats stay on the grid. \LaTeX{} changes a lone
 \opt{[h]} into \opt{[ht]}; a float that goes to the top instead is realigned to
@@ -598,7 +601,7 @@ are used for $h$, $d$ and $b$.
   as in Section~\ref{sec:place}.
 \end{enumerate}
 
-\subsection{Floats}
+\subsection{Floats}\label{sec:float-impl}
 
 \begin{description}
 \item[Size] After \cs{@endfloatbox}, the float box is rebuilt as a \cs{vbox} of
@@ -635,8 +638,10 @@ are used for $h$, $d$ and $b$.
   stretch. The floats are realigned to the top in \cs{@wtryfc}, which stacks
   them (they keep the alignment of a trial as an in-text float). Since the fitting
   test (\cs{@xtryfc}) does not count \cs{@fptop}, the column height is reduced by
-  it during the test. Float-only pages of double-column floats are handled in the
-  same way.
+  it during the test. \LaTeX{} shrinks a float taller than the text height to the
+  text height (\cs{@largefloatcheck}); to match the test, it is shrunk by
+  \cs{@fptop} more, with a warning. Float-only pages of double-column floats are
+  handled in the same way.
 \item[Order of footnotes] The \cs{@makecol} of pLaTeX puts footnotes after the
   floats, so their height is subtracted from the column height when computing
   $r$. The \cs{@makecol} of \LaTeX{} 2025-06-01 or later (e.g.\ LuaLaTeX) puts the
