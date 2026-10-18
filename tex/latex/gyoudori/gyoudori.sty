@@ -1,6 +1,6 @@
 \NeedsTeXFormat{LaTeX2e}[2020/10/01]
 \ProvidesPackage{gyoudori}
-   [2026/10/17 v20261017.0 style file ``gyoudori.sty''^^J
+   [2026/10/18 v20261018.0 style file ``gyoudori.sty''^^J
     by Yuwsuke Kieda]
 
 % pLaTeX/upLaTeXとLuaLaTeX（LuaTeX-ja）で動く．
@@ -669,6 +669,13 @@
     \@botlist
   \endgroup}
 
+% evenend：持ち越された段内フロート\evenendfloatboxを上寄せに組み直す
+\def\@gyoudori@evenend@deferred{%
+  \begingroup
+    \@gyoudori@floattop
+    \@gyoudori@float@set\evenendfloatbox\@gyoudori@floatpos\@gyoudori@floatshift
+  \endgroup}
+
 % 出力ルーチンのマクロ#1の前に#2を足す（もとの定義は\@gyoudori@orig@#1）
 \def\@gyoudori@prepend#1#2{%
   \expandafter\let\csname @gyoudori@orig@#1\expandafter\endcsname
@@ -726,7 +733,10 @@
       {\vskip-\@tempskipa}}}%
   % evenend
   \@ifundefined{evenend@capture}{}{%
-    \@gyoudori@prepend{evenend@capture}{\@gyoudori@evenend@prep}}%
+    \@gyoudori@prepend{evenend@capture}{\@gyoudori@evenend@prep}%
+    % 段数の切り換えや最終ページで，持ち越された段内フロート（\evenendfloatbox）は
+    % 段の上に置かれるので，上のフロートと同じく上寄せに組み直す
+    \AddToHook{evenend/deferredfloat}{\@gyoudori@evenend@deferred}}%
   % flushend：最終ページの段の組み上げの後に足す
   \@ifundefined{set@outputbox@with@footnote@and@float}{}{%
     \g@addto@macro\set@outputbox@with@footnote@and@float

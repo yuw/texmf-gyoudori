@@ -26,7 +26,7 @@
 
 \title{\pkg{gyoudori}パッケージ\\[.5ex]\large 行取り（行ドリ）の実現}
 \author{木枝祐介}
-\date{2026年10月17日\quad v20261017.0}
+\date{2026年10月18日\quad v20261018.0}
 
 \begin{document}
 \maketitle
@@ -413,7 +413,8 @@ $n$行取りの次の行は，$n+1$行目から始まる．ディスプレイ数
   保つ．\opt{spread}，\opt{shrink}系のオプションは効かない．左右の段のつなぎ目の
   間隔は行送りの整数倍に切り上げる．
 \item[\pkg{evenend}] （LuaLaTeX）最終ページでそろえた段のフロートを，上なら上寄せ，
-  下なら下寄せにそろえる．
+  下なら下寄せにそろえる．段数の切り換えや最終ページで持ち越されて段の上に置かれる
+  段内フロートも，上寄せにそろえる．
 \end{description}
 
 \section{JLREQとの関係}
@@ -568,7 +569,9 @@ $h$，$d$，$b$には，その場の「あ」の高さ・深さと\cs{baselinesk
   左段の最後の要素のベースラインから右段の最初の要素のベースラインまでを，$b$の
   整数倍に切り上げる．フロートの箱では，中身のずらし量$\delta$も考慮する．
 \item[\pkg{evenend}] 最終ページの段内フロートの複製をとる前に，上のフロートを
-  \opt{t}に，下のフロートを\opt{b}に組み直す．
+  \opt{t}に，下のフロートを\opt{b}に組み直す．持ち越された段内フロートは，evenendが
+  段に入れる前に呼ぶフック\texttt{evenend/deferredfloat}で，上のフロートと同じく
+  組み直す．
 \end{description}
 
 \section{制限事項}\label{sec:limit}

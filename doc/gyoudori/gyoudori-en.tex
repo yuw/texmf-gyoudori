@@ -24,7 +24,7 @@
 \title{The \pkg{gyoudori} package\\[.5ex]\large Gyou-dori (line-based placement)
   for Japanese typesetting}
 \author{Yuwsuke Kieda}
-\date{2026-10-17\quad v20261017.0}
+\date{2026-10-18\quad v20261018.0}
 
 \begin{document}
 \maketitle
@@ -477,7 +477,9 @@ The following applies with \opt{float=true}.
   \opt{shrink} options have no effect). The gap where the two columns are joined
   is rounded up to a multiple of the line pitch.
 \item[\pkg{evenend}] (LuaLaTeX) Floats on the balanced last page are aligned to
-  the top or bottom of the column.
+  the top or bottom of the column. Deferred column floats that evenend puts at the
+  top of a column at a change of the number of columns or on the last page are
+  aligned to the top as well.
 \end{description}
 
 \section{Relation to JLREQ}
@@ -669,6 +671,9 @@ are used for $h$, $d$ and $b$.
   shift $\delta$ of float boxes into account.
 \item[\pkg{evenend}] Before the copies of column floats on the last page are
   taken, top floats are realigned to \opt{t} and bottom floats to \opt{b}.
+  Deferred column floats are realigned like top floats in the hook
+  \texttt{evenend/deferredfloat}, which evenend calls before putting them into a
+  column.
 \end{description}
 
 \section{Limitations}\label{sec:limit}
