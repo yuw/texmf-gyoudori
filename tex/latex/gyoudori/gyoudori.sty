@@ -1,6 +1,6 @@
 \NeedsTeXFormat{LaTeX2e}[2020/10/01]
 \ProvidesPackage{gyoudori}
-   [2026/10/18 v20261018.0 style file ``gyoudori.sty''^^J
+   [2026/10/18 v20261018.1 style file ``gyoudori.sty''^^J
     by Yuwsuke Kieda]
 
 % pLaTeX/upLaTeXとLuaLaTeX（LuaTeX-ja）で動く．
@@ -526,7 +526,7 @@
 % （本文中に置けずに上か下に回ったときは，そこで改めて組み直される）
 % 段の先頭に来ると前のアキが捨てられて位置がずれるので，直前では改段させない
 % （\if@nobreakが真だと，カーネルは\interlinepenaltyの代わりに\nobreakを入れる．
-% 本文中に置けなかったときはもとに戻す）
+% 本文中に置かれなかったときはもとに戻す）
 \def\@gyoudori@addtocurcol{%
   \@gyoudori@metrics
   \@gyoudori@float@set\@currbox{c}%
@@ -537,8 +537,12 @@
     \def\@gyoudori@restore@nobreak{\@nobreakfalse}%
   \fi
   \@nobreaktrue
+  \let\@gyoudori@midlist\@midlist
   \@gyoudori@orig@addtocurcol
-  \if@insert\else\@gyoudori@restore@nobreak\fi}
+  % 本文中に置かれたとき（\@midlistに加わったとき）は，カーネルが\if@nobreakを使って
+  % 偽にしている．上や下に置かれたとき，置けなかったときは，もとに戻す（\if@insertは
+  % 上や下に置かれたときも真になるので，判定に使えない）
+  \ifx\@midlist\@gyoudori@midlist\@gyoudori@restore@nobreak\fi}
 
 % nidanfloatの2段組の段ごとの下のフロート（\L@cflb，\R@cflbの置き換え．
 % nidanfloat v2.9による）．もとの定義はフロートの後ろにも\vssがあり，位置が伸びの

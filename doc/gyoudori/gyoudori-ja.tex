@@ -26,7 +26,7 @@
 
 \title{\pkg{gyoudori}パッケージ\\[.5ex]\large 行取り（行ドリ）の実現}
 \author{木枝祐介}
-\date{2026年10月18日\quad v20261018.0}
+\date{2026年10月18日\quad v20261018.1}
 
 \begin{document}
 \maketitle
@@ -594,9 +594,8 @@ $h$，$d$，$b$には，その場の「あ」の高さ・深さと\cs{baselinesk
 \item \pkg{stfloats}の\cs{fnbelowfloat}は，pLaTeXでは効かない（pLaTeXは独自の
   \cs{@makecol}を使うため）．
 \item \verb|$$|で囲んだディスプレイ数式は行取りしない．
-\item 既知の未対応事項：\pkg{nidanfloat}と\opt{displaymath}を一緒に使うと，本文の行が
-  行の位置からずれることがある．原因はまだ特定できていない（領域の箱の深さによる
-  ものではないことは確かめた）．
+\item 既知の未対応事項：pLaTeXで\opt{float}，\pkg{nidanfloat}，脚注を一緒に使うと，
+  段組のページの出力でOverfullが出ることがある．
 \end{itemize}
 
 \section{参考文献}

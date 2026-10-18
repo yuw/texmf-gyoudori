@@ -24,7 +24,7 @@
 \title{The \pkg{gyoudori} package\\[.5ex]\large Gyou-dori (line-based placement)
   for Japanese typesetting}
 \author{Yuwsuke Kieda}
-\date{2026-10-18\quad v20261018.0}
+\date{2026-10-18\quad v20261018.1}
 
 \begin{document}
 \maketitle
@@ -700,9 +700,8 @@ are used for $h$, $d$ and $b$.
 \item \cs{fnbelowfloat} of \pkg{stfloats} has no effect in pLaTeX, which uses
   its own \cs{@makecol}.
 \item Display math enclosed by \verb|$$| is not placed by gyou-dori.
-\item Known, not yet fixed: with \pkg{nidanfloat} and \opt{displaymath} together,
-  text lines may be shifted off the grid. The cause has not been identified yet
-  (it was confirmed not to be the depth of the boxes of gyou-dori areas).
+\item Known, not yet fixed: with \opt{float}, \pkg{nidanfloat} and footnotes
+  together in pLaTeX, an overfull box may occur when a two-column page is output.
 \end{itemize}
 
 \section{References}
