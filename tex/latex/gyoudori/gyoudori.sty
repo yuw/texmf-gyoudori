@@ -1,31 +1,47 @@
-\NeedsTeXFormat{LaTeX2e}[2020/10/01]
+\NeedsTeXFormat{LaTeX2e}[2022/06/01]
 \ProvidesPackage{gyoudori}
-   [2026/10/18 v20261018.1 style file ``gyoudori.sty''^^J
+   [2026/10/21 v20261021.0 style file ``gyoudori.sty''^^J
     by Yuwsuke Kieda]
 
 % pLaTeX/upLaTeXとLuaLaTeX（LuaTeX-ja）で動く．
-% 環境フック（\AddToHook）を使うので，LaTeX 2020-10-01以降が必要
-\@ifl@t@r\fmtversion{2020/10/01}{}{%
-  \PackageError{gyoudori}{LaTeX 2020-10-01 or later is required}{}}
+% パッケージオプションにカーネルのkey-value機能（\DeclareKeys，\ProcessKeyOptions）を
+% 使うので，LaTeX 2022-06-01以降が必要
+\@ifl@t@r\fmtversion{2022/06/01}{}{%
+  \PackageError{gyoudori}{LaTeX 2022-06-01 or later is required}{}}
 
-\RequirePackage{kvoptions}
-\SetupKeyvalOptions{family=gyoudori,prefix=gyoudori@}
+%% パッケージオプション（key-value）
 % displaymath=true|false: ディスプレイ数式環境を自動的に行取りする（既定はfalse）
-\DeclareBoolOption[false]{displaymath}
 % float=true|false: フロートを行取りで配置する（既定はfalse）
-\DeclareBoolOption[false]{float}
-% フロートまわりのアキ．指定しなければクラスファイルの値を使う
-\DeclareStringOption{floatsep}
-\DeclareStringOption{textfloatsep}
-\DeclareStringOption{intextsep}
-\DeclareStringOption{dblfloatsep}
-\DeclareStringOption{dbltextfloatsep}
+% floatsep，textfloatsep，intextsep，dblfloatsep，dbltextfloatsep: フロートまわりの
+%   アキ．指定しなければクラスファイルの値を使う
 % overflow=warning|error: gyoudori環境・\gyoudoriareaの内容が領域に収まらないときに
-% 警告するか（既定），エラーにするか
-\DeclareStringOption[warning]{overflow}
+%   警告するか（既定），エラーにするか
 % indent=true|false: gyoudori環境・\gyoudoriareaの内容の段落を字下げするか（既定はfalse）
-\DeclareBoolOption[false]{indent}
-\ProcessKeyvalOptions*
+% 真偽値のオプションは，キーだけを書くとtrueになる
+\newif\ifgyoudori@displaymath
+\newif\ifgyoudori@float
+\newif\ifgyoudori@indent
+\def\gyoudori@floatsep{}
+\def\gyoudori@textfloatsep{}
+\def\gyoudori@intextsep{}
+\def\gyoudori@dblfloatsep{}
+\def\gyoudori@dbltextfloatsep{}
+\def\gyoudori@overflow{warning}
+\DeclareKeys[gyoudori]{
+  displaymath     .if         = gyoudori@displaymath ,
+  displaymath     .default:n  = true ,
+  float           .if         = gyoudori@float ,
+  float           .default:n  = true ,
+  indent          .if         = gyoudori@indent ,
+  indent          .default:n  = true ,
+  floatsep        .store      = \gyoudori@floatsep ,
+  textfloatsep    .store      = \gyoudori@textfloatsep ,
+  intextsep       .store      = \gyoudori@intextsep ,
+  dblfloatsep     .store      = \gyoudori@dblfloatsep ,
+  dbltextfloatsep .store      = \gyoudori@dbltextfloatsep ,
+  overflow        .store      = \gyoudori@overflow ,
+}
+\ProcessKeyOptions[gyoudori]
 
 \def\@tempa{warning}\def\@tempb{error}
 \ifx\gyoudori@overflow\@tempa\else\ifx\gyoudori@overflow\@tempb\else

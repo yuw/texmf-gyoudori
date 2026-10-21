@@ -24,7 +24,7 @@
 \title{The \pkg{gyoudori} package\\[.5ex]\large Gyou-dori (line-based placement)
   for Japanese typesetting}
 \author{Yuwsuke Kieda}
-\date{2026-10-18\quad v20261018.1}
+\date{2026-10-21\quad v20261021.0}
 
 \begin{document}
 \maketitle
@@ -170,8 +170,9 @@ full-width size.
 \begin{itemize}
 \item pLaTeX, upLaTeX, or LuaLaTeX with LuaTeX-ja (\pkg{ltjsarticle},
   \pkg{jlreq}, etc.). Horizontal writing only.
-\item \LaTeX{} 2020-10-01 or later (the package uses \cs{AddToHook}).
-\item The \pkg{kvoptions} package.
+\item \LaTeX{} 2022-06-01 or later (the package uses the key-value options of
+  the kernel, \cs{DeclareKeys} and \cs{ProcessKeyOptions}, and the environment
+  hooks \cs{AddToHook}). No other package is required.
 \end{itemize}
 
 Put \texttt{gyoudori.sty} into your TEXMF tree (e.g.\ \texttt{tex/latex/gyoudori/}).

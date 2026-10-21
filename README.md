@@ -1,7 +1,7 @@
 # gyoudori — gyou-dori (line-based placement) for Japanese typesetting
 
 - Author: Yuwsuke Kieda
-- Version: v20261018.1 (2026-10-18)
+- Version: v20261021.0 (2026-10-21)
 - License: MIT
 - Repository: https://github.com/yuw/texmf-gyoudori
 
@@ -53,8 +53,8 @@ cases where one has to typeset under such a specification.
 - pLaTeX, upLaTeX, or LuaLaTeX with LuaTeX-ja (e.g. ltjsarticle, jlreq);
   designed for horizontal writing (vertical writing is not considered; see the
   limitations in the manual)
-- LaTeX 2020-10-01 or later
-- kvoptions
+- LaTeX 2022-06-01 or later (key-value options of the kernel); no other package
+  is required
 
 ## Installation
 

@@ -26,7 +26,7 @@
 
 \title{\pkg{gyoudori}パッケージ\\[.5ex]\large 行取り（行ドリ）の実現}
 \author{木枝祐介}
-\date{2026年10月18日\quad v20261018.1}
+\date{2026年10月21日\quad v20261021.0}
 
 \begin{document}
 \maketitle
@@ -143,8 +143,9 @@ JLREQの行間（行送り$-$文字サイズ）と一致する．pLaTeXの標準
 \begin{itemize}
 \item pLaTeX，upLaTeX，またはLuaLaTeX$+$LuaTeX-ja（\pkg{ltjsarticle}，\pkg{jlreq}など）．
   横組のみを対象とする．
-\item \LaTeX{} 2020-10-01以降（環境フック\cs{AddToHook}を使う）．
-\item \pkg{kvoptions}パッケージ．
+\item \LaTeX{} 2022-06-01以降（パッケージオプションにカーネルのkey-value機能
+  \cs{DeclareKeys}，\cs{ProcessKeyOptions}を，環境の前後の処理に環境フック
+  \cs{AddToHook}を使う）．ほかのパッケージは必要ない．
 \end{itemize}
 
 \texttt{gyoudori.sty}をTEXMFツリー（例えば\texttt{tex/latex/gyoudori/}）に置く．
