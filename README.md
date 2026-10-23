@@ -24,11 +24,8 @@ content depends on the specification of each job.
 See JLREQ (W3C *Requirements for Japanese Text Layout*), §2.5.2 and §4.1.6:
 https://www.w3.org/TR/jlreq/#processing_of_gyoudori
 
-Gyou-dori is called arbitrary because aligning lines to the grid is not in
-itself a principle of readability. Such a layout is often
-specified regardless of the benefit of readers; page design should rather pursue
-that benefit without being tightly bound to the grid. This package is a tool for
-cases where one has to typeset under such a specification.
+This package is a tool for cases where one has to typeset under such a
+specification.
 
 ## Features
 
