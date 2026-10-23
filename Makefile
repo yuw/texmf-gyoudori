@@ -22,7 +22,7 @@ ctan:
 	cp $(docdir)/$(dir)-fig.tex tmp/$(dir)/doc
 	for d in $(docs); do cp $(docdir)/$$d.tex $(docdir)/$$d.pdf tmp/$(dir)/doc; done
 	cp -a tex/latex/$(dir) tmp/$(dir)/tex
-	cp README.md LICENSE tmp/$(dir)
+	cp README.md README-ja.md LICENSE tmp/$(dir)
 	cd tmp; zip -r $(dir).zip $(dir)
 	mv tmp/$(dir).zip .
 	rm -r tmp

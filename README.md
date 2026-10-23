@@ -5,6 +5,8 @@
 - License: MIT
 - Repository: https://github.com/yuw/texmf-gyoudori
 
+Japanese version: [README-ja.md](README-ja.md)
+
 ## What is gyou-dori?
 
 *Gyou-dori* (行取り, also written 行ドリ) is one of the arbitrary layouts: the
@@ -12,7 +14,9 @@ block-direction space of an element whose size differs from the main text, such
 as a heading, is determined as a number of lines of the kihon-hanmen (the basic
 page format), so that the following lines of the main text stay on the line
 positions of the kihon-hanmen (the line grid). It is used in typesetting
-Japanese books and the like when such a line grid is specified.
+Japanese books and the like when such a line grid is specified. This package is
+a tool for cases where one has to typeset under such a specification.
+
 The area of an 𝑛-line gyou-dori is
 
     character frame × 𝑛 + line gap × (𝑛 − 1)
@@ -23,9 +27,6 @@ bottom alignment can be chosen with the position argument. Where to place the
 content depends on the specification of each job.
 See JLREQ (W3C *Requirements for Japanese Text Layout*), §2.5.2 and §4.1.6:
 https://www.w3.org/TR/jlreq/#processing_of_gyoudori
-
-This package is a tool for cases where one has to typeset under such a
-specification.
 
 ## Features
 
@@ -109,4 +110,5 @@ how it works, and the limitations. Build them with `make doc`
 𝑛行取りの領域は「字の枠の高さ × 𝑛 + 行間 × (𝑛 − 1)」で，このパッケージは
 既定で内容を領域の中央に置き，位置の指定で上寄せ・下寄せにもできる（領域の定義は
 JLREQ §4.1.6）．pLaTeX，upLaTeX，LuaLaTeX（LuaTeX-ja）で動く．このパッケージは横組用である．
-詳しくは日本語のマニュアル`doc/gyoudori/gyoudori-ja.pdf`を参照のこと．
+日本語のREADMEは[README-ja.md](README-ja.md)，詳しくは日本語のマニュアル
+`doc/gyoudori/gyoudori-ja.pdf`を参照のこと．
