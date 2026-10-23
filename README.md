@@ -1,7 +1,7 @@
 # gyoudori — gyou-dori (line-based placement) for Japanese typesetting
 
 - Author: Yuwsuke Kieda
-- Version: v20261023.0 (2026-10-23)
+- Version: v20261023.1 (2026-10-23)
 - License: MIT
 - Repository: https://github.com/yuw/texmf-gyoudori
 
@@ -39,8 +39,9 @@ cases where one has to typeset under such a specification.
   etc. Content that does not fit causes a warning (or an error).
 - Option `displaymath`: display math (`equation`, `\[ \]`, `eqnarray`, and
   `equation*`, `align`, `gather`, `multline`, `flalign`, `alignat` of amsmath,
-  with their starred forms) is centered by its baselines in the smallest area of at least
-  two lines (a one-row display in an odd-line area sits on the middle line).
+  with their starred forms) is centered by its baselines in an area of the
+  number of lines it needs plus one (at least two; changeable with
+  `displaymathextra`), so that one line of space in total is added around it.
   It follows the current font size and `\baselineskip`, so displays in
   footnotes or in parts set in `\small` stay on the surrounding line pitch.
 - Option `float`: floats are put into the smallest gyou-dori area and aligned to
@@ -89,6 +90,7 @@ Package options (key-value):
 | key | value | default | meaning |
 |---|---|---|---|
 | `displaymath` | true/false | false | gyou-dori for display math |
+| `displaymathextra` | integer ≥ 0 | 1 | lines added to the lines a display needs |
 | `float` | true/false | false | gyou-dori for floats |
 | `overflow` | warning/error | warning | when the content does not fit in the area |
 | `indent` | true/false | false | indent the content of `gyoudori` / `\gyoudoriarea` |

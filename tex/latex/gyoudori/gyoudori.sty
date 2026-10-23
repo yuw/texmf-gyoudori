@@ -1,6 +1,6 @@
 \NeedsTeXFormat{LaTeX2e}[2022/06/01]
 \ProvidesPackage{gyoudori}
-   [2026/10/23 v20261023.0 style file ``gyoudori.sty''^^J
+   [2026/10/23 v20261023.1 style file ``gyoudori.sty''^^J
     by Yuwsuke Kieda]
 
 % pLaTeX/upLaTeXとLuaLaTeX（LuaTeX-ja）で動く．
@@ -11,6 +11,8 @@
 
 %% パッケージオプション（key-value）
 % displaymath=true|false: ディスプレイ数式環境を自動的に行取りする（既定はfalse）
+% displaymathextra=整数: ディスプレイ数式が要する行数に足す行数（既定は1）．行取りの
+%   行数は，要する行数にこの数を足したもの（2行以上）
 % float=true|false: フロートを行取りで配置する（既定はfalse）
 % floatsep，textfloatsep，intextsep，dblfloatsep，dbltextfloatsep: フロートまわりの
 %   アキ．指定しなければクラスファイルの値を使う
@@ -27,6 +29,7 @@
 \def\gyoudori@dblfloatsep{}
 \def\gyoudori@dbltextfloatsep{}
 \def\gyoudori@overflow{warning}
+\def\gyoudori@displaymathextra{1}
 \DeclareKeys[gyoudori]{
   displaymath     .if         = gyoudori@displaymath ,
   displaymath     .default:n  = true ,
@@ -40,8 +43,18 @@
   dblfloatsep     .store      = \gyoudori@dblfloatsep ,
   dbltextfloatsep .store      = \gyoudori@dbltextfloatsep ,
   overflow        .store      = \gyoudori@overflow ,
+  displaymathextra .store     = \gyoudori@displaymathextra ,
 }
 \ProcessKeyOptions[gyoudori]
+
+% displaymathextraは0以上の整数
+\@tempcnta\numexpr\gyoudori@displaymathextra\relax
+\ifnum\@tempcnta<\z@
+  \PackageError{gyoudori}{displaymathextra must be 0 or more}{%
+    You gave `\gyoudori@displaymathextra'.}%
+  \@tempcnta\z@
+\fi
+\edef\gyoudori@displaymathextra{\the\@tempcnta}
 
 \def\@tempa{warning}\def\@tempb{error}
 \ifx\gyoudori@overflow\@tempa\else\ifx\gyoudori@overflow\@tempb\else
@@ -326,7 +339,7 @@
   % 1行目と最後の行のベースラインの距離を，式の部分だけで測る
   \setbox\@gyoudori@tmpbox\vbox{\penalty-\@M\unvcopy\@gyoudori@mathbox}%
   \@gyoudori@baselines\@gyoudori@tmpbox
-  \@gyoudori@lines\@ne
+  \@gyoudori@lines\z@
   \@gyoudori@mathfit
   % 式の前の部分（リンクの着地点など）は，高さ0にして式の先頭に重ねて残す
   \ifvoid\@gyoudori@prebox\else
@@ -352,9 +365,11 @@
     \global\setbox\@gyoudori@mathbox\box\@gyoudori@prebox
   \fi}
 
-% 行数と位置を決める．行数は，式の箱（高さ＋深さ）が，領域の外側の行間に半分まで
-% はみ出して収まる最少の行数（2行以上）．位置は，式の1行目と最後の行のベースラインの
-% 中点を領域の中点に合わせるのを基本とし，はみ出すときだけ収まる範囲に寄せる
+% 行数と位置を決める．式が要する行数は，式の箱（高さ＋深さ）が，その行数の領域の外側の
+% 行間に半分まではみ出して収まる最少の行数（本文の行の字面が字の枠からはみ出すのと
+% 同じ扱い）．行取りの行数は，これにdisplaymathextra（既定は1）を足したもの（2行以上）．
+% 位置は，式の1行目と最後の行のベースラインの中点を領域の中点に合わせる（式を中央に
+% 置く）のを基本とし，はみ出すときだけ収まる範囲に寄せる
 % （文書の\loopと干渉しないよう，\loopは使わない）
 \def\@gyoudori@mathfit{%
   \advance\@gyoudori@lines\@ne
@@ -362,6 +377,8 @@
       >\dimexpr\@gyoudori@areaheight\@gyoudori@lines+\@gyoudori@linegap\relax
     \expandafter\@gyoudori@mathfit
   \else
+    \advance\@gyoudori@lines\gyoudori@displaymathextra\relax
+    \ifnum\@gyoudori@lines<\tw@ \@gyoudori@lines\tw@ \fi
     \@gyoudori@mathoff\dimexpr
       \@gyoudori@ht+\@gyoudori@bs*(\@gyoudori@lines-1)/2
       -\ht\@gyoudori@mathbox+\@gyoudori@mathbase/2\relax

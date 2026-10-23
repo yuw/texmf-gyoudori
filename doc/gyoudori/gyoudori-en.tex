@@ -24,7 +24,7 @@
 \title{The \pkg{gyoudori} package\\[.5ex]\large Gyou-dori (line-based placement)
   for Japanese typesetting}
 \author{Yuwsuke Kieda}
-\date{2026-10-23\quad v20261023.0}
+\date{2026-10-23\quad v20261023.1}
 
 \begin{document}
 \maketitle
@@ -351,9 +351,14 @@ Handled are \env{equation}, \env{eqnarray}, math enclosed by \cs{[} and \cs{]}
 (the \env{displaymath} environment), and \env{equation*}, \env{align},
 \env{gather}, \env{multline}, \env{flalign} and \env{alignat} of \pkg{amsmath},
 with their starred forms. Math enclosed by \verb|$$| is not handled. The number
-of lines is the smallest (at least two) in which the display fits; the display
-may extend into the outer line gaps by up to half of them, so that at least half
-of the line gap remains to the character frames of the adjacent lines. Each
+of lines is the number of lines the display needs plus one (at least two; the
+number added can be changed with \opt{displaymathextra};
+Section~\ref{sec:displaymathextra}). The number of lines a display needs is the
+smallest number of lines in whose area it fits when it may extend into the outer
+line gaps by up to half of them, as the ink of a text line may extend beyond its
+character frame. For example, a display that fits in one line takes two lines,
+and one that needs two lines takes three, so that one line of space in total is
+added above and below the display. Each
 display is placed so that the midpoint between the baselines of its first and
 last rows coincides with the midpoint between the baselines of the first and last
 lines of the area; a one-row display in an area of an odd number of lines thus
@@ -385,11 +390,11 @@ A line of text.
 \end{demo}
 
 The gray bands show the line grid (the character frame of each line).
-In this example, the \env{align} is centered in a 2-line area and the
-\env{gather*} in a 2-line area, and the text before and after them stays on the
+In this example, the two-row \env{align} is centered in a 3-line area and the
+one-row \env{gather*} in a 2-line area, and the text before and after them stays on the
 grid.
 
-Larger displays with fractions, integrals and sums are also placed in the smallest area that holds them.
+Larger displays with fractions, integrals and sums are also placed in an area of the number of lines they need plus one.
 
 \begin{demo}
 \GyBands{13}A line of text. An integral and a sum:
@@ -412,7 +417,7 @@ More text. A case analysis:
 The last line of text.
 \end{demo}
 
-In this example, the displays take two, four and three lines, and the text after each of them is on the grid.
+In this example, the displays take three, five and three lines, and the text after each of them is on the grid.
 
 The next example is inside a part set in \cs{small}. The gray bands show the
 line grid of \cs{small}.
@@ -428,6 +433,13 @@ The following line is also on the grid of \cs{small}.
 \end{gather*}
 The last line.
 \end{demo}
+
+\subsection{\opt{displaymathextra=\meta{integer}}}\label{sec:displaymathextra}
+
+With \opt{displaymath}, the number of lines added to the number of lines a display
+needs (an integer of 0 or more). The default is 1. The display takes ``needed
+lines $+$ this value'' lines, and at least two. With 0, it takes the smallest
+number of lines in which it fits (at least two).
 
 \subsection{\opt{float=true|false}}\label{sec:float}
 
@@ -607,8 +619,10 @@ are used for $h$, $d$ and $b$.
   $H-\Delta$. With the distance from the top of the area to the top of the box
   \[ y = h + \frac{(n-1)b}{2} - H + \frac{\Delta}{2}, \]
   the midpoint of the baselines of the display coincides with that of the area.
-\item Starting from $n=2$, the smallest $n$ with $H+D\le A(n)+g$ is used (the box
-  may extend into the outer line gaps by up to half of them). If $y$ is less than
+\item Starting from $k=1$, the smallest $k$ with $H+D\le A(k)+g$ is found (the
+  number of lines the display needs; the box may extend into the outer line gaps
+  by up to half of them), and $n=k+e$ is used, where $e$ is the value of
+  \opt{displaymathextra} (1 by default); if $n<2$, $n=2$. If $y$ is less than
   $-g/2$, it is set to $-g/2$; if it is greater than $A(n)+g/2-H-D$, it is set to
   that value, so that the box is shifted into the range where it fits.
 \item The box is lowered by $y$ in the area, which is placed in the same way
@@ -714,6 +728,11 @@ are used for $h$, $d$ and $b$.
 \item \cs{fnbelowfloat} of \pkg{stfloats} has no effect in pLaTeX, which uses
   its own \cs{@makecol}.
 \item Display math enclosed by \verb|$$| is not placed by gyou-dori.
+\item Known, not yet fixed: when \pkg{nidanfloat} moves text overflowing the left
+  column into the right column, it inserts the space between lines without
+  regard to the depth of the last line of the left column, so the lines of the
+  right column may be shifted by the depth of ``あ''. Whether it occurs depends
+  on the page layout.
 \item Known, not yet fixed: with \opt{float}, \pkg{nidanfloat} and footnotes
   together in pLaTeX, an overfull box may occur when a two-column page is output.
 \end{itemize}
