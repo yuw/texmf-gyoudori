@@ -24,7 +24,7 @@
 \title{The \pkg{gyoudori} package\\[.5ex]\large Gyou-dori (line-based placement)
   for Japanese typesetting}
 \author{Yuwsuke Kieda}
-\date{2026-10-21\quad v20261021.0}
+\date{2026-10-23\quad v20261023.0}
 
 \begin{document}
 \maketitle
@@ -350,14 +350,19 @@ Display math is placed by gyou-dori automatically. The default is \opt{false}.
 Handled are \env{equation}, \env{eqnarray}, math enclosed by \cs{[} and \cs{]}
 (the \env{displaymath} environment), and \env{equation*}, \env{align},
 \env{gather}, \env{multline}, \env{flalign} and \env{alignat} of \pkg{amsmath},
-with their starred forms. Math enclosed by \verb|$$| is not handled. Each display
-is placed so that the midpoint between the baselines of its first and last rows
-coincides with the midpoint between the baselines of the first and last lines of
-the area; a one-row display in an area of an odd number of lines thus sits on
-the baseline of the middle line. The number of lines is the smallest (at least
-two) with which the display fits at this position; the display may extend into
-the outer line gaps by up to half of them, so that at least half of the line gap
-remains to the character frames of the adjacent lines.
+with their starred forms. Math enclosed by \verb|$$| is not handled. The number
+of lines is the smallest (at least two) in which the display fits; the display
+may extend into the outer line gaps by up to half of them, so that at least half
+of the line gap remains to the character frames of the adjacent lines. Each
+display is placed so that the midpoint between the baselines of its first and
+last rows coincides with the midpoint between the baselines of the first and last
+lines of the area; a one-row display in an area of an odd number of lines thus
+sits on the baseline of the middle line. A display that is asymmetric and does
+not fit at this position, such as one with the equation number on a lower row,
+is shifted into the range where it fits. The struts (\cs{strut}) that
+\pkg{amsmath} puts in each row are measured at the size of the character frame
+of ``あ'', so invisible struts do not increase the number of lines. Material
+before the display, such as a link target of hyperref, is not counted as a line.
 \cs{abovedisplayskip} and the like are not used. Equation numbers, \cs{label}
 and \cs{eqref} work as they do without this option.
 
@@ -380,12 +385,9 @@ A line of text.
 \end{demo}
 
 The gray bands show the line grid (the character frame of each line).
-In this example, the \env{align} is centered in a 3-line area and the
+In this example, the \env{align} is centered in a 2-line area and the
 \env{gather*} in a 2-line area, and the text before and after them stays on the
-grid. Since \env{align} and \env{gather} of \pkg{amsmath} insert \cs{strut} in
-every row, the number of lines of a two-row \env{align} depends on the line
-pitch of the class (for example, three lines with \pkg{jlreq} used for this
-manual, and two lines with \pkg{jsarticle}).
+grid.
 
 Larger displays with fractions, integrals and sums are also placed in the smallest area that holds them.
 
@@ -587,19 +589,28 @@ are used for $h$, $d$ and $b$.
 \item With the environment hooks (\texttt{env/<name>/before} and \texttt{after}),
   a \cs{vbox} is opened outside the environment, and the display is set in it
   with \cs{abovedisplayskip} etc.\ set to zero.
-\item A \cs{penalty}~$-10000$ is put at the top of this box. When a copy of the
-  finished box is split by \cs{vsplit} with \cs{splittopskip} set to a large value
-  $S$, the rest begins with glue of ``$S-{}$the height of the first row''. Thus
-  ``the height of the rest $-S$'' is the distance $\Delta$ between the baselines of
-  the first and last rows.
+  In the box, \cs{strutbox} is set to the size of the character frame of ``あ''
+  (the struts of the rows of \pkg{amsmath}), and \cs{predisplaypenalty} to
+  $-10000$.
+\item Since \TeX{} puts \cs{predisplaypenalty} right before the display, the box
+  is split there by \cs{vsplit} into the material before the display (such as a
+  line formed before it) and the display. Only the display is measured below. The
+  material before it is finally kept as a box of height zero overlaid at the top
+  of the display.
+\item When a copy of the display with a \cs{penalty}~$-10000$ at its top is split
+  by \cs{vsplit} with \cs{splittopskip} set to a large value $S$, the rest begins
+  with glue of ``$S-{}$the height of the first row''. Thus ``the height of the
+  rest $-S$'' is the distance $\Delta$ between the baselines of the first and last
+  rows.
 \item Let $H$ and $D$ be the height and depth of the box. The baseline of the
   last row is at $H$ from the top of the box, and that of the first row at
   $H-\Delta$. With the distance from the top of the area to the top of the box
   \[ y = h + \frac{(n-1)b}{2} - H + \frac{\Delta}{2}, \]
   the midpoint of the baselines of the display coincides with that of the area.
-\item Starting from $n=2$, the smallest $n$ with $-g/2\le y$ and
-  $y+H+D\le A(n)+g/2$ is used (the box may extend into the outer line gaps by up
-  to half of them).
+\item Starting from $n=2$, the smallest $n$ with $H+D\le A(n)+g$ is used (the box
+  may extend into the outer line gaps by up to half of them). If $y$ is less than
+  $-g/2$, it is set to $-g/2$; if it is greater than $A(n)+g/2-H-D$, it is set to
+  that value, so that the box is shifted into the range where it fits.
 \item The box is lowered by $y$ in the area, which is placed in the same way
   as in Section~\ref{sec:place}.
 \end{enumerate}
@@ -614,6 +625,8 @@ are used for $h$, $d$ and $b$.
   position $p$ (\opt{t}, \opt{c}, \opt{b}) and lowered by $\delta$, keeping the outer
   dimensions (height and depth) of the box. Thus the float placement of \LaTeX{}
   is not affected, and the mark of double-column floats (depth 1\,sp) is kept.
+  A box stacked without \cs{@endfloatbox} (such as the double-column title of
+  \cs{twocolumn}) is not realigned, since its content cannot be taken out.
 \item[Top floats (\cs{@cflt})] $p=\opt{t}$, $\delta=t_1-h$; the top of the
   area is on the top of the character frame of the first line.
 \item[Bottom floats (\cs{@cflb})] $p=\opt{b}$, $\delta=d-d_{\mathrm{last}}$, where

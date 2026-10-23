@@ -1,6 +1,6 @@
 \NeedsTeXFormat{LaTeX2e}[2022/06/01]
 \ProvidesPackage{gyoudori}
-   [2026/10/21 v20261021.0 style file ``gyoudori.sty''^^J
+   [2026/10/23 v20261023.0 style file ``gyoudori.sty''^^J
     by Yuwsuke Kieda]
 
 % pLaTeX/upLaTeXとLuaLaTeX（LuaTeX-ja）で動く．
@@ -297,13 +297,21 @@
 % \baselineskipなので，脚注や\smallの中でもまわりの行にそろう．
 \newbox\@gyoudori@mathbox
 
+\newbox\@gyoudori@prebox
+\newbox\@gyoudori@tmpbox
 \def\@gyoudori@math@begin{%
   \par
   \setbox\@gyoudori@mathbox\vbox\bgroup
     \hsize\linewidth \parshape\z@
     \abovedisplayskip\z@ \belowdisplayskip\z@
     \abovedisplayshortskip\z@ \belowdisplayshortskip\z@
-    \penalty-\@M % 1行目のベースラインを求めるための区切り
+    % TeXが式の直前に入れる\predisplaypenaltyを，式とその前の部分を分ける区切りにする
+    % （式の前の段落に，hyperrefのリンクの着地点などが入って行ができることがある）
+    \predisplaypenalty-\@M
+    % amsmathが各行に入れる支柱を「あ」の字の枠にする（見えない深さで行数が増えない
+    % ように．行の間隔は\baselineskipで決まるので変わらない）
+    \setbox\z@\hbox{あ}%
+    \setbox\strutbox\hbox{\vrule\@height\ht\z@\@depth\dp\z@\@width\z@}%
     \noindent}
 
 \def\@gyoudori@math@end{%
@@ -314,27 +322,55 @@
   % \normalsizeの本文では\normalsizeの基準と同じ）
   \let\@gyoudori@getmetrics\@gyoudori@metrics@local
   \@gyoudori@getmetrics
-  \@gyoudori@baselines\@gyoudori@mathbox
+  \@gyoudori@math@split
+  % 1行目と最後の行のベースラインの距離を，式の部分だけで測る
+  \setbox\@gyoudori@tmpbox\vbox{\penalty-\@M\unvcopy\@gyoudori@mathbox}%
+  \@gyoudori@baselines\@gyoudori@tmpbox
   \@gyoudori@lines\@ne
   \@gyoudori@mathfit
+  % 式の前の部分（リンクの着地点など）は，高さ0にして式の先頭に重ねて残す
+  \ifvoid\@gyoudori@prebox\else
+    \setbox\@gyoudori@mathbox\vbox{%
+      \vbox to\z@{\unvbox\@gyoudori@prebox\vss}%
+      \unvbox\@gyoudori@mathbox}%
+  \fi
   \@gyoudori@place{t}{\@gyoudori@lines}%
     {\kern\@gyoudori@mathoff\box\@gyoudori@mathbox}%
   \let\@gyoudori@getmetrics\@gyoudori@metrics
   \@gyoudori@doendpe}
 
-% \@gyoudori@linesを1つずつ増やし，数式の箱が収まる最初の行数で止める
+% 式の箱を，区切り（\predisplaypenalty）の手前の部分\@gyoudori@preboxと，式の部分
+% \@gyoudori@mathboxに分ける．区切りがなければ（\samepageなどで\predisplaypenaltyが
+% 変えられたとき），全体を式の部分とする
+\def\@gyoudori@math@split{%
+  \begingroup
+    \vbadness\@M \vfuzz\maxdimen \splitmaxdepth\maxdimen \splittopskip\z@
+    \global\setbox\@gyoudori@prebox\vsplit\@gyoudori@mathbox to\maxdimen
+    \global\setbox\@gyoudori@mathbox\box\@gyoudori@mathbox
+  \endgroup
+  \ifvoid\@gyoudori@mathbox
+    \global\setbox\@gyoudori@mathbox\box\@gyoudori@prebox
+  \fi}
+
+% 行数と位置を決める．行数は，式の箱（高さ＋深さ）が，領域の外側の行間に半分まで
+% はみ出して収まる最少の行数（2行以上）．位置は，式の1行目と最後の行のベースラインの
+% 中点を領域の中点に合わせるのを基本とし，はみ出すときだけ収まる範囲に寄せる
 % （文書の\loopと干渉しないよう，\loopは使わない）
 \def\@gyoudori@mathfit{%
   \advance\@gyoudori@lines\@ne
-  \@gyoudori@mathoff\dimexpr
-    \@gyoudori@ht+\@gyoudori@bs*(\@gyoudori@lines-1)/2
-    -\ht\@gyoudori@mathbox+\@gyoudori@mathbase/2\relax
-  \@tempswafalse
-  \ifdim\@gyoudori@mathoff<-.5\@gyoudori@linegap \@tempswatrue \fi
-  \ifdim\dimexpr\@gyoudori@mathoff+\ht\@gyoudori@mathbox+\dp\@gyoudori@mathbox\relax
-      >\dimexpr\@gyoudori@areaheight\@gyoudori@lines+\@gyoudori@linegap/2\relax
-    \@tempswatrue \fi
-  \if@tempswa \expandafter\@gyoudori@mathfit \fi}
+  \ifdim\dimexpr\ht\@gyoudori@mathbox+\dp\@gyoudori@mathbox\relax
+      >\dimexpr\@gyoudori@areaheight\@gyoudori@lines+\@gyoudori@linegap\relax
+    \expandafter\@gyoudori@mathfit
+  \else
+    \@gyoudori@mathoff\dimexpr
+      \@gyoudori@ht+\@gyoudori@bs*(\@gyoudori@lines-1)/2
+      -\ht\@gyoudori@mathbox+\@gyoudori@mathbase/2\relax
+    \@tempdima-.5\@gyoudori@linegap
+    \ifdim\@gyoudori@mathoff<\@tempdima \@gyoudori@mathoff\@tempdima \fi
+    \@tempdima\dimexpr\@gyoudori@areaheight\@gyoudori@lines+\@gyoudori@linegap/2
+      -\ht\@gyoudori@mathbox-\dp\@gyoudori@mathbox\relax
+    \ifdim\@gyoudori@mathoff>\@tempdima \@gyoudori@mathoff\@tempdima \fi
+  \fi}
 
 % 環境のグループの外側（before/after）にフックする．align*は内部で\endalignを
 % 呼ぶが，フックは\begin/\endでだけはたらくので二重にはならない．
@@ -407,15 +443,23 @@
 \def\@gyoudori@float@set#1#2#3{%
   \@tempdima\ht#1%
   \@tempdimb\dp#1%
-  \setbox\z@\vbox{% 末尾のグルー（多くて2つ）を除いて中身を取り出す
-    \unvbox#1\unskip\unskip
-    \global\setbox\@gyoudori@floatbody\lastbox}%
-  \global\setbox#1\vbox to\dimexpr\@tempdima+\@tempdimb\relax{%
-    \vskip#3\relax
-    \csname @gyoudori@pos@#2\endcsname{\box\@gyoudori@floatbody}%
-    \vskip-#3\relax}%
-  \global\ht#1\@tempdima
-  \global\dp#1\@tempdimb}
+  % 末尾のグルー（多くて2つ）を除いて中身を取り出す．\@gyoudori@float@boxが作った形で
+  % ない箱（\@topnewpageの段抜きの表題のように末尾がwhatsitのものなど）からは取り出せ
+  % ないので，そのときは組み直さずにもとのまま残す
+  \global\setbox\@gyoudori@floatbody\box\voidb@x
+  \setbox\z@\vbox{%
+    \unvcopy#1\unskip\unskip
+    \ifnum\lastnodetype>\z@ \ifnum\lastnodetype<\thr@@ % 箱（hlistかvlist）
+      \global\setbox\@gyoudori@floatbody\lastbox
+    \fi\fi}%
+  \ifvoid\@gyoudori@floatbody\else
+    \global\setbox#1\vbox to\dimexpr\@tempdima+\@tempdimb\relax{%
+      \vskip#3\relax
+      \csname @gyoudori@pos@#2\endcsname{\box\@gyoudori@floatbody}%
+      \vskip-#3\relax}%
+    \global\ht#1\@tempdima
+    \global\dp#1\@tempdimb
+  \fi}
 
 % フロートを積む各マクロ（\@comflelt）が使う，中身の位置とずらし量
 \def\@gyoudori@floatpos{t}
@@ -435,8 +479,9 @@
   \setbox\z@\vbox{%
     \unvcopy#1%
     \global\@tempdimb\dp#1%
-    \ifnum\lastnodetype=\@ne \setbox\z@\lastbox \global\@tempdimb\dp\z@ \fi
-    \ifnum\lastnodetype=\tw@ \setbox\z@\lastbox \global\@tempdimb\dp\z@ \fi}}
+    \ifnum\lastnodetype>\z@ \ifnum\lastnodetype<\thr@@ % 箱（hlistかvlist）
+      \setbox\z@\lastbox \global\@tempdimb\dp\z@
+    \fi\fi}}
 
 % 本文の直後に置く下のフロート：[b]．本文の最終行の実際の深さ#1を「あ」の深さと
 % みなしてそろえる
