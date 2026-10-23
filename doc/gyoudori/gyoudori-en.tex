@@ -347,34 +347,45 @@ It can be changed for each area with \opt{indent} and \opt{noindent}
 \subsection{\opt{displaymath=true|false}}\label{sec:displaymath}
 
 Display math is placed by gyou-dori automatically. The default is \opt{false}.
-Handled are \env{equation}, \env{eqnarray}, math enclosed by \cs{[} and \cs{]}
+
+\paragraph{Targets}
+\env{equation}, \env{eqnarray}, math enclosed by \cs{[} and \cs{]}
 (the \env{displaymath} environment), and \env{equation*}, \env{align},
 \env{gather}, \env{multline}, \env{flalign} and \env{alignat} of \pkg{amsmath},
-with their starred forms. Math enclosed by \verb|$$| is not handled. The number
-of lines is the number of lines the display needs plus one (at least two; the
-number added can be changed with \opt{displaymathextra};
-Section~\ref{sec:displaymathextra}). The number of lines a display needs is the
+with their starred forms. Math enclosed by \verb|$$| is not handled. Equation
+numbers, \cs{label} and \cs{eqref} work as they do without this option.
+
+\paragraph{Number of lines}
+A display takes the number of lines it needs plus one, and at least two. The
+number added can be changed with \opt{displaymathextra}
+(Section~\ref{sec:displaymathextra}). The number of lines a display needs is the
 smallest number of lines in whose area it fits when it may extend into the outer
 line gaps by up to half of them, as the ink of a text line may extend beyond its
 character frame. For example, a display that fits in one line takes two lines,
-and one that needs two lines takes three, so that one line of space in total is
-added above and below the display. Each
-display is placed so that the midpoint between the baselines of its first and
-last rows coincides with the midpoint between the baselines of the first and last
-lines of the area; a one-row display in an area of an odd number of lines thus
-sits on the baseline of the middle line. A display that is asymmetric and does
-not fit at this position, such as one with the equation number on a lower row,
-is shifted into the range where it fits. The struts (\cs{strut}) that
-\pkg{amsmath} puts in each row are measured at the size of the character frame
-of ``あ'', so invisible struts do not increase the number of lines. Material
-before the display, such as a link target of hyperref, is not counted as a line.
-\cs{abovedisplayskip} and the like are not used. Equation numbers, \cs{label}
-and \cs{eqref} work as they do without this option.
+and one that needs two lines takes three. One line of space in total is thus
+added above and below the display. \cs{abovedisplayskip} and the like are not
+used.
 
-The gyou-dori is based on the height and depth of ``あ'' in the current font size
-and on \cs{baselineskip}. In the main text at \cs{normalsize} this is the same
-as the line pitch of \cs{normalsize}; inside footnotes, or answers set in
-\cs{small} and the like, the display follows the surrounding line pitch.
+\paragraph{Position}
+Each display is placed so that the midpoint between the baselines of its first
+and last rows coincides with the midpoint between the baselines of the first and
+last lines of the area. A one-row display thus sits on the baseline of the middle
+line in an area of an odd number of lines, and midway between two baselines in
+an area of an even number of lines. A display that is asymmetric and does not fit
+at this position, such as one with the equation number on a lower row, is
+shifted into the range where it fits.
+
+\paragraph{Measurement}
+The struts (\cs{strut}) that \pkg{amsmath} puts in each row are measured at the
+size of the character frame of ``あ'', so invisible struts do not increase the
+number of lines. Material before the display, such as a link target of hyperref,
+is not counted as a line.
+
+\paragraph{Basis of gyou-dori}
+The height and depth of ``あ'' in the current font size and \cs{baselineskip}.
+In the main text at \cs{normalsize} this is the same as the line pitch of
+\cs{normalsize}; inside footnotes, or answers set in \cs{small} and the like,
+the display follows the surrounding line pitch.
 
 \begin{demo}
 \GyBands{8}A line of text. The following display is placed by gyou-dori.
@@ -436,10 +447,16 @@ The last line.
 
 \subsection{\opt{displaymathextra=\meta{integer}}}\label{sec:displaymathextra}
 
-With \opt{displaymath}, the number of lines added to the number of lines a display
-needs (an integer of 0 or more). The default is 1. The display takes ``needed
-lines $+$ this value'' lines, and at least two. With 0, it takes the smallest
-number of lines in which it fits (at least two).
+With \opt{displaymath}, this option sets the number of lines added to the number
+of lines a display needs (an integer of 0 or more). The default is 1. The display
+takes ``needed lines $+$ this value'' lines, and at least two. With 0, it takes
+the smallest number of lines in which it fits (at least two), and the space
+between the display and the character frames of the adjacent lines may shrink to
+half the line gap. With 2 or more, the space above and below the display widens
+accordingly.
+\begin{verbatim}
+\usepackage[displaymath,displaymathextra=0]{gyoudori}
+\end{verbatim}
 
 \subsection{\opt{float=true|false}}\label{sec:float}
 
@@ -527,8 +544,9 @@ in JLREQ.
 \item[Display math (note in \S4.1.6)] For a display formula larger than the
   text size, JLREQ mentions two methods: specifying the area by gyou-dori, or
   keeping a minimum line gap before and after and adjusting the remainder within
-  the page or column. \opt{displaymath} follows the former. The minimum of two
-  lines is a design choice of this package.
+  the page or column. \opt{displaymath} follows the former. Adding one line to
+  the number of lines a display needs (changeable with \opt{displaymathextra})
+  and the minimum of two lines are design choices of this package.
 \item[Illustrations (\S2.5.2, \S4.3)] JLREQ says that the block-direction space
   of illustrations should also be aligned to the line positions of the
   kihon-hanmen; \opt{float} follows this. Avoiding a single text line before or
