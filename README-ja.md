@@ -92,3 +92,9 @@ https://www.w3.org/TR/jlreq/#processing_of_gyoudori
 
 マニュアルでは，行取りを図で説明し，使い方，JLREQとの関係，仕組み，制限事項を述べる．
 `make doc`で組める（pLaTeXとdvipdfmx）．
+
+## CTANに出す配布物
+
+CTANに出す配布物（`build/ctan/gyoudori.zip`）は，gitに登録したファイルから`make ctan`（`tools/ctan/mkctan.sh`）で作る．
+配布物には，このリポジトリのREADMEではなくCTAN用のREADME（`ctan/README.md`，`ctan/README-ja.md`）を入れ，説明書はソースから組み直したPDFを入れる．
+CTANの申込書の下書きは`ctan/upload-form.md`にある．

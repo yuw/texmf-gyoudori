@@ -2,3 +2,6 @@
 *.log
 *.pdf
 *.out
+
+# CTANに出すアーカイブ（tools/ctan/mkctan.shで作る）
+/build/

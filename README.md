@@ -103,6 +103,13 @@ The manuals explain gyou-dori with figures, the usage, the relation to JLREQ,
 how it works, and the limitations. Build them with `make doc`
 (pLaTeX and dvipdfmx).
 
+## CTAN package
+
+The CTAN package (`build/ctan/gyoudori.zip`) is made from the files registered
+in git with `make ctan` (`tools/ctan/mkctan.sh`). It contains the README files
+for CTAN (`ctan/README.md`, `ctan/README-ja.md`) instead of the ones of this
+repository, and the manuals typeset afresh from their sources.
+
 ## 日本語の概要
 
 `gyoudori`は，見出し・ディスプレイ数式・フロートを行取り（行ドリ）で配置し，
