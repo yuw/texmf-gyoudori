@@ -114,7 +114,7 @@ repository, and the manuals typeset afresh from their sources.
 
 `gyoudori`は，見出し・ディスプレイ数式・フロートを行取り（行ドリ）で配置し，
 前後の本文の行を基本版面の行位置からずらさないためのパッケージである．
-𝑛行取りの領域は「字の枠の高さ × 𝑛 + 行間 × (𝑛 − 1)」で，このパッケージは
+𝑛行取りの領域は「ボディーの高さ × 𝑛 + 行間 × (𝑛 − 1)」で，このパッケージは
 既定で内容を領域の中央に置き，位置の指定で上寄せ・下寄せにもできる（領域の定義は
 JLREQ §4.1.6）．pLaTeX，upLaTeX，LuaLaTeX（LuaTeX-ja）で動く．このパッケージは横組用である．
 日本語のREADMEは[README-ja.md](README-ja.md)，詳しくは日本語のマニュアル

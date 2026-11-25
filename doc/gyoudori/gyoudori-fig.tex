@@ -1,8 +1,8 @@
 %% gyoudori-fig.tex: マニュアルの図（日本語版・英語版で共通）
-%% 寸法は模式的：字の枠10，行間5，行送り15（単位pt）．ベースラインは字の枠の上端から8.8
+%% 寸法は模式的：ボディー10，行間5，行送り15（単位pt）．ベースラインはボディーの上端から8.8
 
 %% 行取りの領域
-%% #1：本文，#2：字の枠，#3：行間，#4：行送り，#5：3行取りの領域，
+%% #1：本文，#2：ボディー，#3：行間，#4：行送り，#5：3行取りの領域，
 %% #6：見出し，#7：領域の高さの式
 \newcommand\GyFigArea[7]{%
   \begin{tikzpicture}[x=1.5pt,y=1.8pt,font=\footnotesize]
@@ -24,12 +24,12 @@
     % 右：領域の高さ
     \draw[decorate,decoration={brace,amplitude=4pt}] (156,-30) -- (156,-70)
       node[midway,anchor=west,xshift=6pt,align=left] {#5\\#7};
-    % 左：字の枠，行間，行送り
+    % 左：ボディー，行間，行送り
     \draw[|-|] (-4,0) -- (-4,-10)
       node[midway,anchor=east,xshift=-2pt] (fr) {#2};
     \draw[|-|] (-4,-10) -- (-4,-15) node[midway,anchor=east,xshift=-2pt] {#3};
     % 行送り：ベースラインどうしの間隔（このパッケージの基準点）．
-    % 寸法線は「字の枠」のラベルの左に置く
+    % 寸法線は「ボディー」のラベルの左に置く
     \coordinate (P) at ([xshift=-7pt]fr.west);
     \foreach \y in {-8.8,-23.8} {
       \draw[densely dashed,very thin] ([xshift=-5pt]P |- 0,\y) -- (150,\y);
@@ -88,7 +88,7 @@
     \GyPanel{285}{0}{2}{#5}
   \end{tikzpicture}}
 
-%% 実例の背景に，行の位置（字の枠）をグレーの帯で描く
+%% 実例の背景に，行の位置（ボディー）をグレーの帯で描く
 %% 段落の1行目の先頭に置く．#2：帯の数．寸法はgyoudoriと同じ（\normalsizeの
 %% 「あ」の高さ・深さと\normalbaselineskip）．#1にlocalを指定すると，その場の
 %% 「あ」の高さ・深さと\baselineskipを使う
